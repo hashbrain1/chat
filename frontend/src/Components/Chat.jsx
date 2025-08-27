@@ -22,7 +22,7 @@ const Chat = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${import.meta.env.BACKEND_URL}/chat`, {
+      const response = await axios.post(`${import.meta.env.VITE_BASE_PATH}/chat`, {
         messages: [...messages, userMessage],
       });
 
