@@ -22,7 +22,7 @@ const Chat = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/chat', {
+      const response = await axios.post(`${import.meta.env.BACKEND_URL}/chat`, {
         messages: [...messages, userMessage],
       });
 
