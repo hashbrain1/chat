@@ -18,7 +18,7 @@ const Navbar = () => {
           </div> */}
           <div className="w-10 h-10">
             <img
-              src="/Images/image.png"
+              src="/Images/logo.png"
               alt=""
               className="[clip-path:circle(50%_at_50%_50%)]"
             />
