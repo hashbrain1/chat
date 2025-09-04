@@ -1,75 +1,224 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const barRef = useRef(null);
+  const panelRef = useRef(null);
+  const contentRef = useRef(null);
+
+  const [barH, setBarH] = useState(0);
+  const [panelH, setPanelH] = useState(0);
+
+  // Measure navbar height so the drop-down attaches right under it
+  useEffect(() => {
+    const measureBar = () => {
+      if (barRef.current) {
+        const h = barRef.current.getBoundingClientRect().height;
+        setBarH(h + 12); // +12 to match top margin on small screens
+      }
+    };
+    measureBar();
+    window.addEventListener("resize", measureBar);
+    return () => window.removeEventListener("resize", measureBar);
+  }, []);
+
+  // ESC to close
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // Close when clicking outside the navbar or panel
+  useEffect(() => {
+    if (!open) return;
+
+    const handleOutside = (e) => {
+      const bar = barRef.current;
+      const panel = panelRef.current;
+      const target = e.target;
+      if (bar && !bar.contains(target) && panel && !panel.contains(target)) {
+        setOpen(false);
+      }
+    };
+
+    // Important: use the same options in add/remove
+    const options = { passive: true };
+
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside, options);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside, options);
+    };
+  }, [open]);
+
+  // Compute natural content height for smooth height animation
+  const recalcPanelHeight = () => {
+    if (!contentRef.current) return;
+    const full = contentRef.current.scrollHeight;
+    setPanelH(open ? full : 0);
   };
 
+  useEffect(() => {
+    recalcPanelHeight();
+  }, [open]);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (open) recalcPanelHeight();
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [open]);
+
+  const navItems = [
+    { label: "Home", to: "/", type: "link" },
+    { label: "Product", to: "/product", type: "link" },
+    { label: "Docs", to: "/docs", type: "link" }, // safer than empty string
+    { label: "Ecosystem", href: "#", type: "a" },
+  ];
+
+  const handleMobileClick = () => setOpen(false);
+
   return (
-    <nav className="fixed top-5 left-0 w-full z-50 px-4 sm:px-6">
-      <div className="flex justify-between items-center px-4 py-2 max-w-7xl mx-auto bg-white rounded-full">
-        {/* Logo Section */}
-        <div className="flex items-center space-x-2">
-          {/* <div className="bg-white rounded-full p-2">
-            <span className="text-green-600 font-bold">∞</span>
-          </div> */}
-          <div className="w-10 h-10">
+    <nav className="fixed top-0 left-0 right-0 z-50 px-3 sm:px-4">
+      <div className="mx-auto max-w-7xl">
+        <div
+          ref={barRef}
+          className={`mt-3 sm:mt-4 flex items-center justify-between rounded-2xl bg-white backdrop-blur px-3 sm:px-5 py-2 shadow-md ring-1 ring-black/5 ${
+            open ? "rounded-b-none" : "rounded-2xl"
+          }`}
+        >
+          {/* Brand */}
+          <Link to="/" className="flex items-center gap-2 group">
             <img
               src="/Images/logo.png"
-              alt=""
-              className="[clip-path:circle(50%_at_50%_50%)]"
+              alt="Hash Brain logo"
+              className="w-9 h-9 rounded-full object-cover"
             />
-          </div>
-        </div>
+            <span className="text-sm sm:text-base font-extrabold tracking-tight text-gray-900 group-hover:text-gray-700 transition-colors">
+              HASH BRAIN
+            </span>
+          </Link>
 
-        {/* Menu Icon for Mobile */}
-        <button
-          className="md:hidden text-black focus:outline-none"
-          onClick={toggleMenu}
-          aria-label="Toggle menu"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-6">
+            {navItems.map((item) =>
+              item.type === "link" ? (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className="text-gray-900 hover:text-gray-700 text-sm font-medium"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className="text-gray-900 hover:text-gray-700 text-sm font-medium"
+                >
+                  {item.label}
+                </a>
+              )
+            )}
+            <Link
+              to="/chat"
+              target="_blank"
+              className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-gray-900 bg-green-300 hover:bg-emerald-300 active:bg-emerald-200 transition-colors shadow-sm"
+            >
+              Chat AI
+            </Link>
+            <Link
+              to="/wallet"
+              className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-white bg-green-500 hover:bg-green-600 active:bg-green-700 transition-colors shadow-sm"
+            >
+              Connect Wallet
+            </Link>
+          </div>
+
+          {/* Mobile hamburger */}
+          <button
+            type="button"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            onClick={() => setOpen((v) => !v)}
+            className="md:hidden inline-flex items-center justify-center p-2 rounded-full text-gray-900 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
           >
-            <path
+            <svg
+              className="h-6 w-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="2"
-              d={
-                isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"
-              }
-            />
-          </svg>
-        </button>
+            >
+              {open ? (
+                <path d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <>
+                  <path d="M4 6h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 18h16" />
+                </>
+              )}
+            </svg>
+          </button>
+        </div>
+      </div>
 
-        {/* Navigation Links */}
-
-        <div
-          className={`${
-            isMenuOpen ? "flex" : "hidden"
-          } md:flex flex-col md:flex-row absolute md:static top-full left-0 w-full md:w-auto bg-white md:bg-transparent rounded-b-xl md:rounded-none shadow-md md:shadow-none px-4 sm:px-6 py-4 md:p-0 space-y-4 md:space-y-0 md:space-x-6 items-center`}
-        >
-          <Link to={"/"} className="text-black hover:text-gray-700">
-            Home
-          </Link>
-          <a href="#" className="text-black hover:text-gray-700">
-            Docs
-          </a>
-          <a href="#" className="text-black hover:text-gray-700">
-            Ecosystem
-          </a>
+      {/* Mobile drop-down (animated height) */}
+      <div
+        ref={panelRef}
+        id="mobile-menu"
+        className="md:hidden fixed left-0 right-0 z-40 mx-3 sm:mx-4 rounded-b-2xl bg-white/95 backdrop-blur shadow-xl ring-1 ring-black/5 overflow-hidden transition-all duration-300"
+        style={{ top: barH, height: panelH }}
+        aria-hidden={!open}
+      >
+        <div ref={contentRef} className="px-4 py-4 flex flex-col gap-1">
+          {navItems.map((item) =>
+            item.type === "link" ? (
+              <Link
+                key={`m-${item.label}`}
+                to={item.to}
+                onClick={handleMobileClick}
+                className="block rounded-xl px-3 py-3 text-gray-900 hover:bg-gray-100 text-base font-medium"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <a
+                key={`m-${item.label}`}
+                href={item.href}
+                onClick={handleMobileClick}
+                className="block rounded-xl px-3 py-3 text-gray-900 hover:bg-gray-100 text-base font-medium"
+              >
+                {item.label}
+              </a>
+            )
+          )}
           <Link
-            to={"/chat"}
-            className="text-black bg-[rgb(151,252,228)] hover:bg-green-500 rounded-full px-4 py-2 text-center"
+            to="/chat"
+            target="_blank"
+            onClick={handleMobileClick}
+            className="mt-1 block rounded-full px-4 py-3 text-center text-base font-semibold text-gray-900 bg-green-300 hover:bg-emerald-300 active:bg-emerald-200"
           >
-            Chat Ai
+            Chat AI
+          </Link>
+          <Link
+            to="/wallet"
+            onClick={handleMobileClick}
+            className="mt-2 block rounded-full px-4 py-3 text-center text-base font-semibold text-white bg-green-500 hover:bg-green-600 active:bg-green-700"
+          >
+            Connect Wallet
           </Link>
         </div>
       </div>

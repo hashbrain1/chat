@@ -5,16 +5,17 @@ import { Button } from "@/Components/ui/button";
 
 const About = () => {
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:p-20 py-10 px-5 bg-gray-300">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:p-20 py-10 px-5">
       {/* Mission */}
       <InfoCard title="Mission">
-        <div className="flex flex-col gap-6">
-          <p className="text-gray-600">
-            Our mission is to decentralize AI. We provide a robust, open-source
-            innovation stack that empowers developers, enterprises, and
-            researchers worldwide to build ethical, scalable, and groundbreaking
-            AI solutions, ensuring that advanced intelligence remains a shared,
-            accessible resource.
+        <div className="flex flex-col gap-6 ">
+          <p>
+            Hash Brain AI empowers the world with decentralized intelligence by
+            merging blockchain transparency and real-time AI. Our mission is to
+            deliver affordable, secure, and community-owned intelligence that
+            transforms decision-making, connects crypto with AI, and ensures
+            freedom from central control—making advanced knowledge accessible to
+            everyone, everywhere.
           </p>
           <Button className="px-6 py-5 bg-green-500 hover:bg-green-600 text-black text-[12px] rounded-full w-fit font-normal">
             About us
@@ -24,7 +25,7 @@ const About = () => {
 
       {/* Why ASI Alliance */}
       <InfoCard title="Why Hash?">
-        <ul className="space-y-2 text-gray-600">
+        <ul className="space-y-2 ">
           {[
             "Decentralized Control",
             "Open Ecosystem",
@@ -42,17 +43,11 @@ const About = () => {
       </InfoCard>
 
       {/* Join Us */}
-      <InfoCard title="Join us">
-        <ul className="space-y-3 text-gray-600">
-          {[
-            "Hash Token ($FET)",
-            "Chat Ai",
-            "Start Building with Hash",
-            "Grants",
-            "Community Overview",
-          ].map((item, index) => (
+      <InfoCard title="How it works">
+        <ul className="space-y-3">
+          {["CONNECT WALLET", "ASK", "GET OUTPUT"].map((item, index) => (
             <li key={index} className="flex items-center gap-3">
-              <span className="w-8 h-[1px] bg-gray-500" /> {item}
+              <CheckCircle className="w-5 h-5 text-green-500" /> {item}
             </li>
           ))}
         </ul>

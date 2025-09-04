@@ -7,19 +7,18 @@ const ProductDescription = () => {
   return (
     <div className="grid grid-cols-1  gap-6 sm:p-20 py-10 px-5  bg-black/85 text-white">
       <h1 className="text-3xl">Products</h1>
-      <h3 className="text-2xl">Product Overview</h3>
       <Card className="rounded-2xl shadow-md border border-green-300 sm:px-10 bg-black text-white">
         <CardContent className="sm:p-10 space-y-4 ">
           <h2 className="text-2xl  bg-green-600 w-fit px-5 py-1 text-center rounded-full">
             Featured
           </h2>
-          <h3 className="text-6xl">Mission </h3>
-          <p className="">
-            Our mission is to decentralize AI. We provide a robust, open-source
-            innovation stack that empowers developers, enterprises, and
-            researchers worldwide to build ethical, scalable, and groundbreaking
-            AI solutions, ensuring that advanced intelligence remains a shared,
-            accessible resource.
+          {/* <h3 className="text-6xl">Mission </h3> */}
+          <p >
+            Hash Brain Is Like a Chat-Gpt Build On The Blockchain{" "}
+                      <br className="hidden sm:block" />
+          Fully Decentralized, Secure and Community Owned.
+          <br className="hidden sm:block" />
+          It's time to join the revolution
           </p>
           <div className="flex gap-5">
             <Button className="px-6 py-5 border-2 border-green-600 bg-transparent hover:bg-green-600  text-[12px] rounded-full w-fit font-normal">

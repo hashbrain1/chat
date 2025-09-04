@@ -1,41 +1,110 @@
-import { Instagram, Linkedin, Twitter,Send, Youtube } from "lucide-react";
 import React from "react";
+import {
+  FaYoutube,
+  FaDiscord,
+  FaRedditAlien,
+  FaGithub,
+  FaTelegramPlane,
+  FaTwitter,
+  FaInstagram,
+} from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="bg-white  shadow-sm  dark:bg-gray-800">
-      <div className="w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
-        <span className="text-sm text-gray-500 sm:text-center dark:text-gray-400">
-          © 2025{" "}
-          <a className="hover:underline">
-            Hash Brain
-          </a>
-          . All Rights Reserved.
-        </span>
-        <ul className="flex gap-3 items-center mt-3 text-sm font-medium text-gray-500 dark:text-gray-400 sm:mt-0">
-          <li>
-            <Link to={"https://www.instagram.com/hashbrainai?igsh=MWtxcG9nYjAya3pvcQ=="} target="_blank" className="hover:underline me-4 md:me-6 ">
-              <Instagram/>
+    <footer className="bg-[#272727] text-gray-300 py-10 px-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
+        {/* Left Section */}
+        <div>
+          <p className="text-sm mb-3">Managed by</p>
+          <h2 className="text-2xl font-bold text-green-400">HASH BRAIN AI</h2>
+          <div className="flex gap-4 mt-4 text-xl">
+            <Link to={"https://www.youtube.com/@HashBrainai"} target="_blank" className="hover:text-green-400">
+              <FaYoutube />
             </Link>
-          </li>
-          <li className="">
-             <Link to={"https://x.com/Hashbrainai/status/1961703826077225297?t=Ad_ZVn4nMKMko012MHPjUg&s=19"} target="_blank" className="hover:underline me-4 md:me-6 ">
-              <Twitter/>
+            <Link to={"https://x.com/Hashbrainai/status/1961703826077225297?t=Ad_ZVn4nMKMko012MHPjUg&s=19"} target="_blank" className="hover:text-green-400">
+              <FaTwitter />
             </Link>
-          </li>
-          <li>
-            <Link to={"https://t.me/+wGZ8G1_XCx00ZGU1"} target="_blank" className="hover:underline me-4 md:me-6">
-              <Send/>
+            <Link to={""} className="hover:text-green-400">
+              <FaDiscord />
             </Link>
-          </li>
-          <li>
-           <Link to={"https://www.youtube.com/@HashBrainai"} target="_blank" className="hover:underline me-4 md:me-6">
-              <Youtube/>
+            <Link to={""} className="hover:text-green-400">
+              <FaRedditAlien />
             </Link>
-          </li>
-         
-        </ul>
+            <Link to={""} className="hover:text-green-400">
+              <FaGithub />
+            </Link>
+            <Link to={"https://t.me/+wGZ8G1_XCx00ZGU1"} target="_blank" className="hover:text-green-400">
+              <FaTelegramPlane />
+            </Link>
+             <Link to={"https://www.instagram.com/hashbrainai?igsh=MWtxcG9nYjAya3pvcQ=="} target="_blank" className="hover:text-green-400">
+              <FaInstagram />
+            </Link>
+            
+          </div>
+          <p className="text-xs mt-4">
+            © 2025 Hash Brain AI. All rights reserved.
+          </p>
+        </div>
+
+        {/* Middle Section */}
+        <div>
+          <h3 className="text-white font-semibold mb-3">HASH BRAIN</h3>
+          <ul className="space-y-2 text-sm">
+            <li>
+              <a href="#" className="hover:text-green-400">
+                Whitepaper
+              </a>
+            </li>
+            <li>
+              <a href="#" className="hover:text-green-400">
+                Tokenomics
+              </a>
+            </li>
+            <li>
+              <a href="#" className="hover:text-green-400">
+                Roadmap
+              </a>
+            </li>
+            <li>
+              <a href="#" className="hover:text-green-400">
+                Careers
+              </a>
+            </li>
+            <li>
+              <a href="#" className="hover:text-green-400">
+                Privacy Policy
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        {/* Right Section */}
+        <div>
+          <h3 className="text-white font-semibold mb-3">GET CONNECTED</h3>
+          <ul className="space-y-2 text-sm">
+            <li>
+              <a href="#" className="hover:text-green-400">
+                Blog
+              </a>
+            </li>
+            <li>
+              <a href="#" className="hover:text-green-400">
+                Newsletter
+              </a>
+            </li>
+            <li>
+              <a href="#" className="hover:text-green-400">
+                Community
+              </a>
+            </li>
+            <li>
+              <a href="#" className="hover:text-green-400">
+                Contact
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
     </footer>
   );

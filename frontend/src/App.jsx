@@ -1,9 +1,10 @@
 import React from "react";
 import Home from "./Pages/Home";
-import Chat from "./Components/Chat";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AppLayout from "./Components/AppLayout";
 import About from "./Pages/About";
+import ChatApp from "./Components/ChatApp";
+import ProductDescription from "./Pages/ProductDescription";
 
 const App = () => {
   const router = createBrowserRouter([
@@ -19,9 +20,13 @@ const App = () => {
           path: "/about",
           element: <About />,
         },
+          {
+          path: "/product",
+          element: <ProductDescription />,
+        },
         {
           path: "/chat",
-          element: <Chat />,
+          element: <ChatApp />,
         },
       ],
     },
