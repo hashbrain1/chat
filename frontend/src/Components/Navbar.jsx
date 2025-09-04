@@ -207,7 +207,6 @@ const Navbar = () => {
           )}
           <Link
             to="/chat"
-            target="_blank"
             onClick={handleMobileClick}
             className="mt-1 block rounded-full px-4 py-3 text-center text-base font-semibold text-gray-900 bg-green-300 hover:bg-emerald-300 active:bg-emerald-200"
           >
