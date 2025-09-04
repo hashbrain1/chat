@@ -8,7 +8,7 @@ const Home = () => {
   return (
     <div className="flex flex-col">
       {/* Hero Section with Video Background */}
-      <section className="relative h-[90svh] sm:h-screen flex flex-col items-center justify-center text-center text-white w-full overflow-hidden px-4 sm:px-6 lg:px-8">
+      <section className="relative h-[100vh] sm:h-screen flex flex-col items-center justify-center text-center text-white w-full overflow-hidden px-4 sm:px-6 lg:px-8">
         {/* Background Video */}
         <video
           autoPlay

@@ -11,6 +11,7 @@ dotenv.config();
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,       // production (e.g. https://yourfrontend.com)
+   process.env.FRONTEND_URL1,
 ];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
