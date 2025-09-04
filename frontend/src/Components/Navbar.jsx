@@ -130,7 +130,6 @@ const Navbar = () => {
             )}
             <Link
               to="/chat"
-              target="_blank"
               className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-gray-900 bg-green-300 hover:bg-emerald-300 active:bg-emerald-200 transition-colors shadow-sm"
             >
               Chat AI
