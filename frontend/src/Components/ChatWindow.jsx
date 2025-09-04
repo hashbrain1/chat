@@ -1,15 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { getMessages, sendMessage } from "../lib/axios";
 
 const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesChange }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const taRef = useRef(null);
 
   useEffect(() => {
     if (sessionId) loadMessages();
-    else setMessages([]);
+    else setMessages([]); // clear messages for placeholder new chat
   }, [sessionId]);
 
   const loadMessages = async () => {
@@ -17,13 +16,6 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
     const { data } = await getMessages(sessionId);
     setMessages(data);
     onMessagesChange(data);
-  };
-
-  const autoGrow = () => {
-    const el = taRef.current;
-    if (!el) return;
-    el.style.height = "0px";
-    el.style.height = Math.min(el.scrollHeight, 160) + "px";
   };
 
   const handleSend = async () => {
@@ -36,7 +28,6 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
 
     setInput("");
     setIsTyping(true);
-    autoGrow();
 
     try {
       const { data } = await sendMessage(sessionId, [
@@ -47,16 +38,19 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
           ])
           .flat()
           .filter((m) => m.content),
-        { role: "user", content: newMessage.message },
+        { role: "user", content: input },
       ]);
 
+      // ✅ If this was a placeholder chat, backend now created a real session
       if (!sessionId && data.sessionId) {
         setCurrentSessionId(data.sessionId);
         setSessions((prev) => [{ sessionId: data.sessionId, title: "New Chat" }, ...prev]);
       }
 
+      // Update last message with AI response
       const withResponse = [...updatedMessages];
       withResponse[withResponse.length - 1].response = data.response;
+
       setMessages(withResponse);
       onMessagesChange(withResponse);
     } catch (err) {
@@ -73,42 +67,66 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
     }
   };
 
-  useEffect(() => autoGrow(), [input]);
-
   return (
-    <div className="flex flex-col h-[100svh] md:h-screen bg-black/85 text-white">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-4 px-2">
-        <div className="w-full max-w-3xl mx-auto space-y-4">
+    <div className="flex flex-col h-screen bg-black/85 text-white">
+      {/* Centered Chat Container */}
+      <div className="flex-1 flex justify-center overflow-y-auto py-6">
+        <div className="w-full max-w-3xl px-4 space-y-4">
           {messages.map((m, i) => (
             <div key={i}>
-              <div className="text-right bg-blue-600 p-2 rounded-lg inline-block">{m.message}</div>
+              {/* User bubble */}
+              <div className="flex justify-end">
+                <div className="bg-blue-600 text-white px-4 py-2 rounded-2xl max-w-xs shadow">
+                  {m.message}
+                </div>
+              </div>
+
+              {/* AI bubble */}
               {m.response && (
-                <div className="mt-2 text-left bg-gray-700 p-2 rounded-lg inline-block">{m.response}</div>
+                <div className="flex justify-start mt-2">
+                  <div className="bg-gray-800 text-gray-100 px-4 py-2 rounded-2xl max-w-xl shadow">
+                    {m.response}
+                  </div>
+                </div>
               )}
             </div>
           ))}
-          {isTyping && <p className="italic text-gray-400">Assistant is typing...</p>}
+
+          {/* AI typing */}
+          {isTyping && (
+            <div className="flex justify-start mt-2">
+              <div className="bg-gray-800 text-gray-400 px-4 py-2 rounded-2xl italic">
+                AI is typing...
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Input */}
-      <div className="border-t border-gray-800 p-3 bg-black sticky bottom-0">
-        <div className="w-full max-w-3xl mx-auto flex gap-2">
+      {/* Input Bar */}
+      <div className="p-4 flex justify-center">
+        <div className="w-full max-w-3xl flex items-center bg-gray-900 rounded-full px-4">
           <textarea
-            ref={taRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 resize-none bg-gray-900 rounded-lg p-2 focus:outline-none"
             rows={1}
+            className="flex-1 bg-transparent text-white outline-none resize-none py-3"
             placeholder="Type your message..."
           />
           <button
             onClick={handleSend}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg"
+            className="ml-3 bg-green-600 hover:bg-green-500 px-5 py-2 rounded-full text-white"
           >
-            Send
+            <svg
+              className="w-5 h-5 sm:w-6 sm:h-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
           </button>
         </div>
       </div>
