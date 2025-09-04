@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { getMessages, sendMessage } from "../lib/axios";
 
-const ChatWindow = ({ sessionId, onMessagesChange }) => {
+const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesChange }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     if (sessionId) loadMessages();
+    else setMessages([]); // clear messages for placeholder new chat
   }, [sessionId]);
 
   const loadMessages = async () => {
+    if (!sessionId) return;
     const { data } = await getMessages(sessionId);
     setMessages(data);
     onMessagesChange(data);
@@ -39,6 +41,13 @@ const ChatWindow = ({ sessionId, onMessagesChange }) => {
         { role: "user", content: input },
       ]);
 
+      // ✅ If this was a placeholder chat, backend now created a real session
+      if (!sessionId && data.sessionId) {
+        setCurrentSessionId(data.sessionId);
+        setSessions((prev) => [{ sessionId: data.sessionId, title: "New Chat" }, ...prev]);
+      }
+
+      // Update last message with AI response
       const withResponse = [...updatedMessages];
       withResponse[withResponse.length - 1].response = data.response;
 

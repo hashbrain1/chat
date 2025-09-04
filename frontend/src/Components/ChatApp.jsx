@@ -1,62 +1,60 @@
 import { useState, useEffect } from "react";
 import ChatWindow from "./ChatWindow";
 import Sidebar from "./Sidebar";
-import { createSession, getSessions } from "../lib/axios";
+import { getSessions } from "../lib/axios";
 
 const ChatApp = () => {
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [hasMessages, setHasMessages] = useState(false);
   const [sessions, setSessions] = useState([]);
 
-  // 🚀 Create or load session on first visit
-  useEffect(() => {
-    const initChat = async () => {
-      try {
-        const { data } = await getSessions(); // get all sessions from backend
-        if (data.length === 0) {
-          // no session -> create one
-          const res = await createSession();
-          setSessions([res.data]);
-          setCurrentSessionId(res.data.sessionId);
-        } else {
-          // open latest session
-          setSessions(data);
-          setCurrentSessionId(data[0].sessionId);
-        }
-      } catch (err) {
-        console.error("Error loading sessions:", err);
-      }
-    };
+  // 🚀 Load existing sessions on first visit
+useEffect(() => {
+  const initChat = async () => {
+    try {
+      const { data } = await getSessions(); // could be array or object
+      const list = Array.isArray(data?.sessions) ? data.sessions
+                 : Array.isArray(data) ? data
+                 : [];
+      setSessions(list);
 
-    initChat();
-  }, []);
+      if (list.length > 0) {
+        setCurrentSessionId(list[0].sessionId);
+      } else {
+        setCurrentSessionId(null);
+      }
+    } catch (err) {
+      console.error("Error loading sessions:", err);
+      setSessions([]); // keep it an array to avoid crashes
+    }
+  };
+  initChat();
+}, []);
+
 
   return (
     <div className="flex flex-1 h-screen bg-black text-white">
       {/* Sidebar */}
       <Sidebar
-        sessions={sessions}                // ✅ pass sessions for history
-        setSessions={setSessions}          // ✅ update sessions when new chat created
+        sessions={sessions}
+        setSessions={setSessions}
         onSelectSession={(id) => {
           setCurrentSessionId(id);
-          setHasMessages(false);           // reset, ChatWindow will update later
+          setHasMessages(false);
         }}
         currentSessionId={currentSessionId}
         hasMessages={hasMessages}
+        setCurrentSessionId={setCurrentSessionId}  // ✅ pass this down
       />
 
       {/* Chat Window */}
       <div className="flex-1">
-        {currentSessionId ? (
-          <ChatWindow
-            sessionId={currentSessionId}
-            onMessagesChange={(msgs) => setHasMessages(msgs.length > 0)}
-          />
-        ) : (
-          <div className="h-full flex items-center justify-center text-gray-500">
-            Loading chat...
-          </div>
-        )}
+        <ChatWindow
+          sessionId={currentSessionId}
+          setCurrentSessionId={setCurrentSessionId} // ✅ so it can assign real ID
+          setSessions={setSessions}                 // ✅ update sessions after save
+          onMessagesChange={(msgs) => setHasMessages(msgs.length > 0)}
+        />
       </div>
     </div>
   );
