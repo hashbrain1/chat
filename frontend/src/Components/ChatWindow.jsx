@@ -8,7 +8,7 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
 
   useEffect(() => {
     if (sessionId) loadMessages();
-    else setMessages([]); // clear messages for placeholder new chat
+    else setMessages([]);
   }, [sessionId]);
 
   const loadMessages = async () => {
@@ -41,13 +41,11 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
         { role: "user", content: input },
       ]);
 
-      // ✅ If this was a placeholder chat, backend now created a real session
       if (!sessionId && data.sessionId) {
         setCurrentSessionId(data.sessionId);
         setSessions((prev) => [{ sessionId: data.sessionId, title: "New Chat" }, ...prev]);
       }
 
-      // Update last message with AI response
       const withResponse = [...updatedMessages];
       withResponse[withResponse.length - 1].response = data.response;
 
@@ -68,15 +66,15 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
   };
 
   return (
-    <div className="flex flex-col h-screen bg-black/85 text-white">
-      {/* Centered Chat Container */}
-      <div className="flex-1 flex justify-center overflow-y-auto py-6">
-        <div className="w-full max-w-3xl px-4 space-y-4">
+    <div className="flex flex-col h-full bg-black/85 text-white">
+      {/* Chat Messages */}
+      <div className="flex-1 flex justify-center overflow-y-auto py-4 sm:py-6">
+        <div className="w-full max-w-full sm:max-w-3xl px-2 sm:px-4 space-y-4">
           {messages.map((m, i) => (
             <div key={i}>
               {/* User bubble */}
               <div className="flex justify-end">
-                <div className="bg-blue-600 text-white px-4 py-2 rounded-2xl max-w-xs shadow">
+                <div className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow">
                   {m.message}
                 </div>
               </div>
@@ -84,7 +82,7 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
               {/* AI bubble */}
               {m.response && (
                 <div className="flex justify-start mt-2">
-                  <div className="bg-gray-800 text-gray-100 px-4 py-2 rounded-2xl max-w-xl shadow">
+                  <div className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow">
                     {m.response}
                   </div>
                 </div>
@@ -92,10 +90,10 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
             </div>
           ))}
 
-          {/* AI typing */}
+          {/* AI typing indicator */}
           {isTyping && (
             <div className="flex justify-start mt-2">
-              <div className="bg-gray-800 text-gray-400 px-4 py-2 rounded-2xl italic">
+              <div className="bg-gray-800 text-gray-400 px-3 sm:px-4 py-2 rounded-2xl italic text-sm sm:text-base">
                 AI is typing...
               </div>
             </div>
@@ -104,19 +102,19 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
       </div>
 
       {/* Input Bar */}
-      <div className="p-4 flex justify-center">
-        <div className="w-full max-w-3xl flex items-center bg-gray-900 rounded-full px-4">
+      <div className="p-2 sm:p-4 flex justify-center">
+        <div className="w-full max-w-full sm:max-w-3xl flex items-center bg-gray-900 rounded-full px-3 sm:px-4">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
-            className="flex-1 bg-transparent text-white outline-none resize-none py-3"
+            className="flex-1 bg-transparent text-white outline-none resize-none py-2 sm:py-3 text-sm sm:text-base min-h-[40px] sm:min-h-[48px]"
             placeholder="Type your message..."
           />
           <button
             onClick={handleSend}
-            className="ml-3 bg-green-600 hover:bg-green-500 px-5 py-2 rounded-full text-white"
+            className="ml-2 sm:ml-3 bg-green-600 hover:bg-green-500 px-4 sm:px-5 py-2 rounded-full text-white"
           >
             <svg
               className="w-5 h-5 sm:w-6 sm:h-6"

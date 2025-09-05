@@ -125,3 +125,20 @@
   background: linear-gradient(to bottom, #90EE90, #006400);
 } */
 
+
+
+@media (max-width: 640px) {
+  .chat-container {
+    padding: 0.5rem;
+  }
+  .message-bubble {
+    max-width: 85%;
+    font-size: 0.875rem;
+  }
+  .input-bar {
+    padding: 0.5rem;
+  }
+}
+
+
+
