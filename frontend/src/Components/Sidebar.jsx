@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { FaBars } from "react-icons/fa"; // NEW: import menu icon
 
 const Sidebar = ({
   sessions,
@@ -9,7 +10,7 @@ const Sidebar = ({
   setCurrentSessionId,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const sidebarRef = useRef(null); // NEW: sidebar element ref
+  const sidebarRef = useRef(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -21,11 +22,10 @@ const Sidebar = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // NEW: Close on outside click for ≥ md screens
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (
-        window.innerWidth >= 768 && // desktop only
+        window.innerWidth >= 768 &&
         isOpen &&
         sidebarRef.current &&
         !sidebarRef.current.contains(e.target)
@@ -47,7 +47,7 @@ const Sidebar = ({
 
   return (
     <>
-      {/* Mobile toggle when CLOSED (floating at left-4) */}
+      {/* Mobile toggle when CLOSED (floating button) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -55,18 +55,11 @@ const Sidebar = ({
                      focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
           aria-label="Open sidebar"
         >
-          <svg
-            className="w-5 h-5 transition-transform duration-300 rotate-180"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-          </svg>
+          <FaBars className="w-5 h-5 text-white" /> {/* Menu icon */}
         </button>
       )}
 
-      {/* Backdrop for mobile — click outside to close */}
+      {/* Backdrop for mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/40 md:hidden z-30"
@@ -76,14 +69,14 @@ const Sidebar = ({
 
       {/* Sidebar */}
       <div
-        ref={sidebarRef}  // NEW: attach ref
+        ref={sidebarRef}
         className={`h-full bg-gray-900 text-white shadow-lg transition-all duration-300 ease-in-out
                     flex flex-col overflow-hidden
                     md:flex md:flex-col
                     ${isOpen ? "w-64 md:w-72 translate-x-0" : "w-0 md:w-16 -translate-x-full md:translate-x-0"}
-                    fixed md:static inset-y-0 left-0 z-40`}  // <-- relative so the inside button can anchor
+                    fixed md:static inset-y-0 left-0 z-40`}
       >
-        {/* Mobile toggle when OPEN (inside, top-right of the sidebar) */}
+        {/* Mobile toggle when OPEN (inside, top-right) */}
         {isOpen && (
           <button
             onClick={() => setIsOpen(false)}
@@ -91,14 +84,7 @@ const Sidebar = ({
                        focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 z-50"
             aria-label="Close sidebar"
           >
-            <svg
-              className="w-5 h-5 transition-transform duration-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-            </svg>
+            <FaBars className="w-5 h-5 text-white" /> {/* Same menu icon */}
           </button>
         )}
 
@@ -110,20 +96,13 @@ const Sidebar = ({
         >
           {isOpen && <h2 className="text-base md:text-lg font-semibold truncate">Chat Sessions</h2>}
 
-          {/* Desktop toggle (ONLY on ≥ md) */}
+          {/* Desktop toggle */}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="hidden md:inline-flex p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
-            <svg
-              className={`w-5 h-5 transition-transform duration-300 ${isOpen ? "" : "rotate-180"}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-            </svg>
+            <FaBars className={`w-5 h-5 text-white transition-transform duration-300 ${isOpen ? "" : "rotate-180"}`} />
           </button>
         </div>
 
