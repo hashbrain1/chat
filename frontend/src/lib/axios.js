@@ -1,15 +1,14 @@
 import axios from "axios";
 
-const API = axios.create({
-  baseURL: `${import.meta.env.VITE_BASE_PATH}`,
+const api = axios.create({
+  baseURL: import.meta.env.VITE_BASE_PATH || "http://localhost:5000",
   withCredentials: true,
 });
 
-export const getSessions = () => API.get("/api/sessions");
-
-export const createSession = () => API.post("/api/sessions");
-
-export const getMessages = (sessionId) => API.get(`/api/${sessionId}`);
-
+// Chat helpers
+export const getSessions = () => api.get("/api/sessions");
+export const getMessages = (sessionId) => api.get(`/api/${encodeURIComponent(sessionId)}`);
 export const sendMessage = (sessionId, messages) =>
-  API.post("/api/chat", { sessionId, messages });
+  api.post("/api/chat", { sessionId, messages });
+
+export default api;

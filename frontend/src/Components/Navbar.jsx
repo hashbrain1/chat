@@ -1,3 +1,4 @@
+import WalletButton from "@/Wallet/WalletButton";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -10,6 +11,25 @@ const Navbar = () => {
 
   const [barH, setBarH] = useState(0);
   const [panelH, setPanelH] = useState(0);
+
+  // ✅ Track viewport so we only mount ONE WalletButton at a time
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(min-width: 768px)").matches
+      : true
+  );
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 768px)");
+    const onChange = (e) => setIsDesktop(e.matches);
+    if (mql.addEventListener) mql.addEventListener("change", onChange);
+    else mql.addListener(onChange);
+    // initialize once
+    setIsDesktop(mql.matches);
+    return () => {
+      if (mql.removeEventListener) mql.removeEventListener("change", onChange);
+      else mql.removeListener(onChange);
+    };
+  }, []);
 
   // Measure navbar height so the drop-down attaches right under it
   useEffect(() => {
@@ -46,9 +66,7 @@ const Navbar = () => {
       }
     };
 
-    // Important: use the same options in add/remove
     const options = { passive: true };
-
     document.addEventListener("mousedown", handleOutside);
     document.addEventListener("touchstart", handleOutside, options);
 
@@ -80,7 +98,7 @@ const Navbar = () => {
   const navItems = [
     { label: "Home", to: "/", type: "link" },
     { label: "Product", to: "/product", type: "link" },
-    { label: "Docs", to: "/docs", type: "link" }, // safer than empty string
+    { label: "Docs", to: "/docs", type: "link" },
     { label: "Ecosystem", href: "#", type: "a" },
   ];
 
@@ -135,12 +153,10 @@ const Navbar = () => {
             >
               Chat AI
             </Link>
-            <Link
-              to="/wallet"
-              className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-white bg-green-500 hover:bg-green-600 active:bg-green-700 transition-colors shadow-sm"
-            >
-              Connect Wallet
-            </Link>
+            <div>
+              {/* ✅ Mount ONLY on desktop */}
+              {isDesktop && <WalletButton />}
+            </div>
           </div>
 
           {/* Mobile hamburger */}
@@ -209,17 +225,14 @@ const Navbar = () => {
             to="/chat"
             target="_blank"
             onClick={handleMobileClick}
-            className="mt-1 block rounded-full px-4 py-3 text-center text-base font-semibold text-gray-900 bg-green-300 hover:bg-emerald-300 active:bg-emerald-200"
+            className="mt-1 block rounded-lg px-16 py-3 text-center text-base font-semibold text-gray-900 bg-green-300 hover:bg-emerald-300 active:bg-emerald-200 w-fit"
           >
             Chat AI
           </Link>
-          <Link
-            to="/wallet"
-            onClick={handleMobileClick}
-            className="mt-2 block rounded-full px-4 py-3 text-center text-base font-semibold text-white bg-green-500 hover:bg-green-600 active:bg-green-700"
-          >
-            Connect Wallet
-          </Link>
+          <div onClick={handleMobileClick}>
+            {/* ✅ Mount ONLY on mobile */}
+            {!isDesktop && <WalletButton />}
+          </div>
         </div>
       </div>
     </nav>

@@ -4,111 +4,102 @@ import { fetchRealTimeData } from "../Utils/tavily.js";
 import chatModel from "../Models/Chat.js";
 import sessionModel from "../Models/Session.js";
 
-
-// Create / Send Message
 export const sendMessage = async (req, res) => {
-  let { messages, sessionId } = req.body;
-
-  if (!sessionId) {
-    sessionId = uuidv4(); // generate new chat session
-    // create new session in DB
-    await sessionModel.create({ sessionId, title: "New Chat" });
-  }
-
   try {
-    const userMessage = messages[messages.length - 1].content;
+    let { messages, sessionId } = req.body;
+    const owner = req.user?.address || null;
 
-    // 1️⃣ Fetch real-time context
-    const realTimeContext = await fetchRealTimeData(userMessage);
+    if (!messages?.length) return res.status(400).json({ error: "messages[] required" });
 
-    // 2️⃣ Ask OpenAI
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5-nano",
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful assistant with real-time data.",
-        },
-        { role: "system", content: `Real-time info:\n${realTimeContext}` },
-        ...messages,
-      ],
-    });
+    // For signed-in users: ensure ownership and create sessions as needed
+    if (owner) {
+      if (sessionId) {
+        const s = await sessionModel.findOne({ sessionId, owner });
+        if (!s) return res.status(404).json({ error: "Session not found" });
+      } else {
+        sessionId = uuidv4();
+        await sessionModel.create({ sessionId, title: "New Chat", owner });
+      }
+    } else {
+      // Guest: ignore incoming sessionId and never create a DB session
+      sessionId = null;
+    }
 
-    const responseMessage = completion.choices[0].message.content;
+    const userMessage = messages[messages.length - 1]?.content || "";
 
-    // 3️⃣ Save message in DB
-    const chatEntry = new chatModel({
-      sessionId,
-      message: userMessage,
-      response: responseMessage,
-    });
-    await chatEntry.save();
+    // Optional: add real-time context when the message suggests it
+    let rt = "";
+    if (/(news|today|latest|weather|price|stock|score|market)/i.test(userMessage)) {
+      try { rt = await fetchRealTimeData(userMessage); } catch {}
+    }
 
-    // 4️⃣ Update session title if still "New Chat"
-    await sessionModel.findOneAndUpdate(
-      { sessionId },
-      { $set: { title: userMessage.slice(0, 20) + "..." } },
-      { new: true }
-    );
+    const modelMessages = [
+      { role: "system", content: "You are Hash Brain AI. Be concise and accurate." },
+      ...(rt ? [{ role: "system", content: `Real-time notes:\n${rt}` }] : []),
+      ...messages,
+    ];
 
-    res.json({ sessionId, response: responseMessage });
-  } catch (error) {
-    console.error("Error in sendMessage:", error);
-    return res
-      .status(500)
-      .json({ error: "Failed to get response from OpenAI" });
+    const model = process.env.OPENAI_MODEL || "gpt-5-nano";
+    const completion = await openai.chat.completions.create({ model, messages: modelMessages });
+    const reply = completion.choices?.[0]?.message?.content?.trim() || "…";
+
+    // Persist only if signed in
+    if (owner) {
+      await chatModel.create({ sessionId, message: userMessage, response: reply, owner });
+      await sessionModel.findOneAndUpdate(
+        { sessionId, owner },
+        { $set: { title: userMessage.slice(0, 40) + (userMessage.length > 40 ? "…" : "") } },
+        { new: true }
+      );
+    }
+
+    res.json({ sessionId, response: reply });
+  } catch (e) {
+    console.error("Error in sendMessage:", e);
+    res.status(500).json({ error: "Chat error" });
   }
 };
 
-// Get all messages of one session
 export const getMessages = async (req, res) => {
   try {
+    const owner = req.user?.address || null;
+    if (!owner) return res.json([]); // guests have no stored messages
+
     const { sessionId } = req.params;
-    const chats = await chatModel.find({ sessionId }).sort({ createdAt: 1 });
+    const s = await sessionModel.findOne({ sessionId, owner });
+    if (!s) return res.status(404).json({ error: "Not found" });
+
+    const chats = await chatModel.find({ sessionId, owner }).sort({ createdAt: 1 });
     res.json(chats);
-  } catch (error) {
-    console.error("Error in getMessages:", error);
-    return res.status(500).json({ error: "Failed to fetch messages" });
+  } catch (e) {
+    console.error("Error in getMessages:", e);
+    res.status(500).json({ error: "Failed to fetch messages" });
   }
 };
 
-// Get all sessions (for sidebar)
-export const getSessions = async (req, res) => {
+export const getSessions = async (_req, res) => {
   try {
-    const sessions = await sessionModel.find().sort({ updatedAt: -1 });
+    const owner = _req.user?.address || null;
+    if (!owner) return res.json([]); // guests see no sessions
+    const sessions = await sessionModel.find({ owner }).sort({ updatedAt: -1 });
     res.json(sessions);
-  } catch (error) {
-    console.error("Error in getSessions:", error);
-    return res.status(500).json({ error: "Failed to fetch sessions" });
+  } catch (e) {
+    console.error("Error in getSessions:", e);
+    res.status(500).json({ error: "Failed to fetch sessions" });
   }
 };
-
-
-// export const createSession = async (req, res) => {
-//   try {
-//     // always create a fresh session
-//     const session = new sessionModel({
-//       sessionId: uuidv4(),
-//       title: "New Chat",
-//     });
-
-//     await session.save();
-//     res.status(201).json(session);
-//   } catch (error) {
-//     res.status(500).json({ message: "Failed to create session", error });
-//   }
-// };
 
 export const createSession = async (req, res) => {
   try {
-    // 🚫 don't save to DB, just return placeholder
-    const session = {
-      sessionId: null,   // no ID yet
-      title: "New Chat",
-    };
-
-    res.status(200).json(session);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to create placeholder session", error });
+    const owner = req.user?.address || null;
+    if (!owner) {
+      // guests: give a placeholder only (FE already handles this)
+      return res.json({ sessionId: null, title: "New Chat" });
+    }
+    const sessionId = uuidv4();
+    const session = await sessionModel.create({ sessionId, title: "New Chat", owner });
+    res.json(session);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to create session", error: e });
   }
 };
