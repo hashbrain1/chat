@@ -7,6 +7,7 @@ import ChatApp from "./Components/ChatApp";
 import ProductDescription from "./Pages/ProductDescription";
 import WalletProvider from "./Wallet/WalletProvider";
 import WalletButton from "./Wallet/WalletButton";
+import Upgrade from "./Components/Upgrade";
 
 const App = () => {
   const router = createBrowserRouter([
@@ -29,6 +30,10 @@ const App = () => {
         {
           path: "/chat",
           element: <ChatApp />,
+        },
+           {
+          path: "/upgrade",
+          element: <Upgrade />,
         },
       ],
     },

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getMessages, sendMessage } from "../lib/axios";
+import { Link } from "react-router-dom";
 
 const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesChange }) => {
   const [messages, setMessages] = useState([]);
@@ -66,7 +67,30 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
   };
 
   return (
-    <div className="flex flex-col h-full bg-black/85 text-white">
+<div className="flex flex-col h-full min-h-[100svh] bg-black/85 text-white">
+      {/* Upgrade banner — responsive & sidebar-safe */}
+      <div className="sticky top-0 z-20">
+        <div className="px-2 sm:px-4 pt-3 bg-black/80 backdrop-blur">
+          <div className="w-full max-w-full sm:max-w-3xl mx-auto">
+            <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3
+                            flex flex-col sm:flex-row items-stretch sm:items-center
+                            justify-between gap-3">
+              <div className="text-sm sm:text-[15px] leading-snug">
+                <span className="font-semibold">Free plan</span> — limited messages & features.
+                Unlock longer context, faster responses, and more.
+              </div>
+              <Link
+                to="/upgrade"
+                className="rounded-full px-4 py-2 bg-white text-black hover:bg-white/90
+                           text-sm font-semibold text-center w-full sm:w-auto"
+              >
+                Upgrade
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Chat Messages */}
       <div className="flex-1 flex justify-center overflow-y-auto py-4 sm:py-6">
         <div className="w-full max-w-full sm:max-w-3xl px-2 sm:px-4 space-y-4">
@@ -74,7 +98,8 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
             <div key={i}>
               {/* User bubble */}
               <div className="flex justify-end">
-                <div className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow">
+                <div className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl
+                                max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow">
                   {m.message}
                 </div>
               </div>
@@ -82,7 +107,8 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
               {/* AI bubble */}
               {m.response && (
                 <div className="flex justify-start mt-2">
-                  <div className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow">
+                  <div className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl
+                                  max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow">
                     {m.response}
                   </div>
                 </div>
@@ -109,12 +135,14 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
-            className="flex-1 bg-transparent text-white outline-none resize-none py-2 sm:py-3 text-sm sm:text-base min-h-[40px] sm:min-h-[48px]"
+            className="flex-1 bg-transparent text-white outline-none resize-none py-2 sm:py-3
+                       text-sm sm:text-base min-h-[40px] sm:min-h-[48px]"
             placeholder="Type your message..."
           />
           <button
             onClick={handleSend}
             className="ml-2 sm:ml-3 bg-green-600 hover:bg-green-500 px-4 sm:px-5 py-2 rounded-full text-white"
+            aria-label="Send message"
           >
             <svg
               className="w-5 h-5 sm:w-6 sm:h-6"

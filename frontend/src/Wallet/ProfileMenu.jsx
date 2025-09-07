@@ -34,55 +34,49 @@ export default function ProfileMenu({ variant = "navbar" }) {
     };
   }, [open]);
 
-  // Tell navbar's mobile panel to recompute height when submenu toggles
+  // Let containers (e.g., mobile navbar panel) recompute height
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("hb-profile-toggle"));
   }, [open]);
 
   if (!isConnected) return null;
 
-  // Black button with white text (works on white navbar)
+  const isSidebar = variant === "sidebar";
+  const isMobile  = variant === "mobile";
+
+  // Black button with white text
   const baseButton =
     "inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-white bg-black hover:bg-neutral-900 transition-colors shadow-sm cursor-pointer";
 
   // Submenu cards
-  const cardNavbar =
-    // NOTE: absolute + left-0 + top-full => directly under the button
-    "absolute left-0 top-full mt-3 z-50 w-64 rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl ring-1 ring-black/5 overflow-hidden";
-  const cardSidebar =
-    // Sidebar version is inline so it naturally sits below the button
-    "mt-3 w-64 rounded-xl border border-gray-700 bg-gray-800 text-gray-100 shadow-lg ring-1 ring-white/10 overflow-hidden";
+  // navbar = absolute dropdown; sidebar/mobile = in-flow and responsive width
+  const cardNavbar  = "absolute left-0 top-full mt-3 z-50 w-64 rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl ring-1 ring-black/5 overflow-hidden";
+  const cardSidebar = "mt-3 w-full md:w-64 max-w-full rounded-xl border border-gray-700 bg-gray-800 text-gray-100 shadow-lg ring-1 ring-white/10 overflow-hidden";
+  const cardMobile  = "mt-3 w-full rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl ring-1 ring-black/5 overflow-hidden";
 
   const row = "flex items-center justify-between px-3 py-2";
-
-  // Avatar letters:
-  // currently uses the 3rd–4th hex chars of the address (after "0x")
-  // To force 'HB' instead, replace {address?.slice(2,4)?.toUpperCase() || "W"} with {'HB'}
-  const avatar =
-    "inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-black text-xs font-bold";
+  const avatar = "inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-black text-xs font-bold";
 
   return (
-    <div className={variant === "sidebar" ? "w-full" : "relative"}>
-      {/* Profile button (black) */}
+    <div className={isSidebar ? "w-full min-w-0" : "relative"}>
+      {/* Profile button */}
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
         className={
-          variant === "sidebar"
+          isSidebar
             ? "w-full flex items-center justify-between rounded-lg px-3 py-2 bg-black text-white hover:bg-neutral-900 cursor-pointer"
             : baseButton
         }
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <span className="flex items-center gap-2">
-          <span className={avatar}>
-            {address?.slice(2, 4)?.toUpperCase() || "W"}
-          </span>
-          <span className="text-sm">Profile</span>
+        <span className="flex items-center gap-2 min-w-0">
+          <span className={avatar}>{address?.slice(2, 4)?.toUpperCase() || "W"}</span>
+          <span className="text-sm truncate">Profile</span>
         </span>
         <svg
-          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
           viewBox="0 0 20 20"
           fill="currentColor"
         >
@@ -94,20 +88,14 @@ export default function ProfileMenu({ variant = "navbar" }) {
       {open && (
         <div
           ref={menuRef}
-          className={variant === "sidebar" ? cardSidebar : cardNavbar}
+          className={isSidebar ? cardSidebar : isMobile ? cardMobile : cardNavbar}
           role="menu"
         >
           {/* Address */}
-          <div
-            className={
-              variant === "sidebar"
-                ? "px-3 pt-3 pb-3 border-b border-gray-700"
-                : "px-3 pt-3 pb-3 border-b border-gray-200"
-            }
-          >
+          <div className={isSidebar ? "px-3 pt-3 pb-3 border-b border-gray-700" : "px-3 pt-3 pb-3 border-b border-gray-200"}>
             <div className="text-xs uppercase tracking-wide opacity-70 mb-1">Wallet</div>
             <div className="flex items-center justify-between gap-2">
-              <code className="text-sm">{truncate(address)}</code>
+              <code className="text-sm break-words">{truncate(address)}</code>
               <div className="relative">
                 <button
                   onClick={async () => {
@@ -117,15 +105,14 @@ export default function ProfileMenu({ variant = "navbar" }) {
                       setTimeout(() => setCopied(false), 1200);
                     } catch {}
                   }}
-                  className="text-xs px-2 py-1 rounded bg-black text-white hover:bg-neutral-900 cursor-pointer"
+                  className="text-xs px-2 py-1 rounded bg-black text-white hover:bg-neutral-900 cursor-pointer shrink-0"
                   title="Copy address"
                 >
                   Copy
                 </button>
                 {/* Copy feedback */}
                 <span
-                  className={`absolute -top-7 right-0 text-xs rounded-md px-2 py-1 bg-emerald-500 text-white shadow
-                              transition-opacity duration-150 ${copied ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                  className={`absolute -top-7 right-0 text-xs rounded-md px-2 py-1 bg-emerald-500 text-white shadow transition-opacity duration-150 ${copied ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                   aria-live="polite"
                 >
                   Copied!
@@ -143,8 +130,8 @@ export default function ProfileMenu({ variant = "navbar" }) {
             </span>
           </div>
 
-          {/* Logout (extra bottom space -> pb-4) */}
-          <div className="px-3 pt-1 pb-4">
+          {/* Logout */}
+          <div className="px-3 pt-1 pb-5">
             <button
               onClick={() => {
                 setOpen(false);
