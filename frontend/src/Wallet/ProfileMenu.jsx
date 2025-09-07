@@ -1,0 +1,162 @@
+import React, { useEffect, useRef, useState } from "react";
+import { useAccount, useDisconnect } from "wagmi";
+
+const truncate = (addr = "") =>
+  addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
+
+export default function ProfileMenu({ variant = "navbar" }) {
+  const { address, isConnected, status } = useAccount();
+  const { disconnect } = useDisconnect();
+
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const menuRef = useRef(null);
+  const btnRef = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("touchstart", onDoc, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("touchstart", onDoc);
+    };
+  }, [open]);
+
+  // Tell navbar's mobile panel to recompute height when submenu toggles
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("hb-profile-toggle"));
+  }, [open]);
+
+  if (!isConnected) return null;
+
+  // Black button with white text (works on white navbar)
+  const baseButton =
+    "inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-white bg-black hover:bg-neutral-900 transition-colors shadow-sm cursor-pointer";
+
+  // Submenu cards
+  const cardNavbar =
+    // NOTE: absolute + left-0 + top-full => directly under the button
+    "absolute left-0 top-full mt-3 z-50 w-64 rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl ring-1 ring-black/5 overflow-hidden";
+  const cardSidebar =
+    // Sidebar version is inline so it naturally sits below the button
+    "mt-3 w-64 rounded-xl border border-gray-700 bg-gray-800 text-gray-100 shadow-lg ring-1 ring-white/10 overflow-hidden";
+
+  const row = "flex items-center justify-between px-3 py-2";
+
+  // Avatar letters:
+  // currently uses the 3rd–4th hex chars of the address (after "0x")
+  // To force 'HB' instead, replace {address?.slice(2,4)?.toUpperCase() || "W"} with {'HB'}
+  const avatar =
+    "inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-black text-xs font-bold";
+
+  return (
+    <div className={variant === "sidebar" ? "w-full" : "relative"}>
+      {/* Profile button (black) */}
+      <button
+        ref={btnRef}
+        onClick={() => setOpen((v) => !v)}
+        className={
+          variant === "sidebar"
+            ? "w-full flex items-center justify-between rounded-lg px-3 py-2 bg-black text-white hover:bg-neutral-900 cursor-pointer"
+            : baseButton
+        }
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        <span className="flex items-center gap-2">
+          <span className={avatar}>
+            {address?.slice(2, 4)?.toUpperCase() || "W"}
+          </span>
+          <span className="text-sm">Profile</span>
+        </span>
+        <svg
+          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.939l3.71-3.71a.75.75 0 111.06 1.062l-4.24 4.24a.75.75 0 01-1.06 0l-4.24-4.24a.75.75 0 01.02-1.06z" />
+        </svg>
+      </button>
+
+      {/* Submenu */}
+      {open && (
+        <div
+          ref={menuRef}
+          className={variant === "sidebar" ? cardSidebar : cardNavbar}
+          role="menu"
+        >
+          {/* Address */}
+          <div
+            className={
+              variant === "sidebar"
+                ? "px-3 pt-3 pb-3 border-b border-gray-700"
+                : "px-3 pt-3 pb-3 border-b border-gray-200"
+            }
+          >
+            <div className="text-xs uppercase tracking-wide opacity-70 mb-1">Wallet</div>
+            <div className="flex items-center justify-between gap-2">
+              <code className="text-sm">{truncate(address)}</code>
+              <div className="relative">
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(address || "");
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 1200);
+                    } catch {}
+                  }}
+                  className="text-xs px-2 py-1 rounded bg-black text-white hover:bg-neutral-900 cursor-pointer"
+                  title="Copy address"
+                >
+                  Copy
+                </button>
+                {/* Copy feedback */}
+                <span
+                  className={`absolute -top-7 right-0 text-xs rounded-md px-2 py-1 bg-emerald-500 text-white shadow
+                              transition-opacity duration-150 ${copied ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                  aria-live="polite"
+                >
+                  Copied!
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className={row}>
+            <span className="text-sm opacity-80">Status</span>
+            <span className="inline-flex items-center gap-1 text-sm font-medium">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              {status === "connected" ? "Signed in" : "Connecting…"}
+            </span>
+          </div>
+
+          {/* Logout (extra bottom space -> pb-4) */}
+          <div className="px-3 pt-1 pb-4">
+            <button
+              onClick={() => {
+                setOpen(false);
+                disconnect();
+              }}
+              className="w-full rounded-md bg-black hover:bg-neutral-900 text-white text-sm py-2 cursor-pointer"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,6 +1,8 @@
 import WalletButton from "@/Wallet/WalletButton";
+import ProfileMenu from "@/Wallet/ProfileMenu";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAccount } from "wagmi";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -12,7 +14,9 @@ const Navbar = () => {
   const [barH, setBarH] = useState(0);
   const [panelH, setPanelH] = useState(0);
 
-  // ✅ Track viewport so we only mount ONE WalletButton at a time
+  const { isConnected } = useAccount();
+
+  // Desktop media query
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(min-width: 768px)").matches
@@ -23,7 +27,6 @@ const Navbar = () => {
     const onChange = (e) => setIsDesktop(e.matches);
     if (mql.addEventListener) mql.addEventListener("change", onChange);
     else mql.addListener(onChange);
-    // initialize once
     setIsDesktop(mql.matches);
     return () => {
       if (mql.removeEventListener) mql.removeEventListener("change", onChange);
@@ -31,12 +34,12 @@ const Navbar = () => {
     };
   }, []);
 
-  // Measure navbar height so the drop-down attaches right under it
+  // Measure navbar height so mobile panel attaches right under it
   useEffect(() => {
     const measureBar = () => {
       if (barRef.current) {
         const h = barRef.current.getBoundingClientRect().height;
-        setBarH(h + 12); // +12 to match top margin on small screens
+        setBarH(h + 12);
       }
     };
     measureBar();
@@ -53,10 +56,9 @@ const Navbar = () => {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // Close when clicking outside the navbar or panel
+  // Close when clicking outside
   useEffect(() => {
     if (!open) return;
-
     const handleOutside = (e) => {
       const bar = barRef.current;
       const panel = panelRef.current;
@@ -65,11 +67,9 @@ const Navbar = () => {
         setOpen(false);
       }
     };
-
     const options = { passive: true };
     document.addEventListener("mousedown", handleOutside);
     document.addEventListener("touchstart", handleOutside, options);
-
     return () => {
       document.removeEventListener("mousedown", handleOutside);
       document.removeEventListener("touchstart", handleOutside, options);
@@ -87,12 +87,19 @@ const Navbar = () => {
     recalcPanelHeight();
   }, [open]);
 
+  // Auto-resize when inner content grows/shrinks (e.g., Profile submenu)
   useEffect(() => {
-    const onResize = () => {
+    if (!contentRef.current) return;
+    const ro = new ResizeObserver(() => {
       if (open) recalcPanelHeight();
+    });
+    ro.observe(contentRef.current);
+    const onToggle = () => open && recalcPanelHeight();
+    window.addEventListener("hb-profile-toggle", onToggle);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("hb-profile-toggle", onToggle);
     };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
   }, [open]);
 
   const navItems = [
@@ -109,9 +116,9 @@ const Navbar = () => {
       <div className="mx-auto max-w-7xl">
         <div
           ref={barRef}
-          className={`mt-3 sm:mt-4 flex items-center justify-between rounded-2xl bg-white backdrop-blur px-3 sm:px-5 py-2 shadow-md ring-1 ring-black/5 ${
-            open ? "rounded-b-none" : "rounded-2xl"
-          }`}
+          className={`mt-3 sm:mt-4 flex items-center justify-between rounded-2xl
+                      bg-white text-gray-900 backdrop-blur px-3 sm:px-5 py-2
+                      shadow-md ring-1 ring-black/5 ${open ? "rounded-b-none" : "rounded-2xl"}`}
         >
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2 group">
@@ -146,17 +153,25 @@ const Navbar = () => {
                 </a>
               )
             )}
+
+            {/* Chat AI button — black with white text */}
             <Link
               to="/chat"
               target="_blank"
-              className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-gray-900 bg-green-300 hover:bg-emerald-300 active:bg-emerald-200 transition-colors shadow-sm"
+              className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold
+                         bg-black text-white hover:bg-neutral-900 transition-colors shadow-sm"
             >
               Chat AI
             </Link>
-            <div>
-              {/* ✅ Mount ONLY on desktop */}
-              {isDesktop && <WalletButton />}
-            </div>
+
+            {/* Profile (connected) OR Wallet (you can style WalletButton similarly) */}
+            {isDesktop && (isConnected ? (
+              <ProfileMenu />
+            ) : (
+              // If your WalletButton supports className, pass the black style:
+              // <WalletButton className="rounded-full px-4 py-2 text-sm font-semibold bg-black text-white hover:bg-neutral-900 shadow-sm" />
+              <WalletButton />
+            ))}
           </div>
 
           {/* Mobile hamburger */}
@@ -191,11 +206,13 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile drop-down (animated height) */}
+      {/* Mobile drop-down (white bg) */}
       <div
         ref={panelRef}
         id="mobile-menu"
-        className="md:hidden fixed left-0 right-0 z-40 mx-3 sm:mx-4 rounded-b-2xl bg-white/95 backdrop-blur shadow-xl ring-1 ring-black/5 overflow-hidden transition-all duration-300"
+        className="md:hidden fixed left-0 right-0 z-40 mx-3 sm:mx-4 rounded-b-2xl
+                   bg-white/95 text-gray-900 backdrop-blur shadow-xl ring-1 ring-black/5
+                   overflow-hidden transition-all duration-300"
         style={{ top: barH, height: panelH }}
         aria-hidden={!open}
       >
@@ -206,7 +223,7 @@ const Navbar = () => {
                 key={`m-${item.label}`}
                 to={item.to}
                 onClick={handleMobileClick}
-                className="block rounded-xl px-3 py-3 text-gray-900 hover:bg-gray-100 text-base font-medium"
+                className="block rounded-xl px-3 py-3 hover:bg-gray-100 text-base font-medium"
               >
                 {item.label}
               </Link>
@@ -215,23 +232,33 @@ const Navbar = () => {
                 key={`m-${item.label}`}
                 href={item.href}
                 onClick={handleMobileClick}
-                className="block rounded-xl px-3 py-3 text-gray-900 hover:bg-gray-100 text-base font-medium"
+                className="block rounded-xl px-3 py-3 hover:bg-gray-100 text-base font-medium"
               >
                 {item.label}
               </a>
             )
           )}
+
+          {/* Chat AI (mobile) — black */}
           <Link
             to="/chat"
             target="_blank"
             onClick={handleMobileClick}
-            className="mt-1 block rounded-lg px-16 py-3 text-center text-base font-semibold text-gray-900 bg-green-300 hover:bg-emerald-300 active:bg-emerald-200 w-fit"
+            className="mt-1 block rounded-full px-16 py-3 text-center text-base font-semibold
+                       bg-black text-white hover:bg-neutral-900 w-fit shadow-sm"
           >
             Chat AI
           </Link>
-          <div onClick={handleMobileClick}>
-            {/* ✅ Mount ONLY on mobile */}
-            {!isDesktop && <WalletButton />}
+
+          {/* Mobile: Profile submenu (black button) OR Wallet */}
+          <div className="mt-2">
+            {!isDesktop && (isConnected ? (
+              <ProfileMenu />
+            ) : (
+              // If WalletButton supports className, pass black style here too:
+              // <WalletButton className="rounded-full px-4 py-2 text-sm font-semibold bg-black text-white hover:bg-neutral-900 shadow-sm" />
+              <WalletButton />
+            ))}
           </div>
         </div>
       </div>

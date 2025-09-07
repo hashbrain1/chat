@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { FaBars } from "react-icons/fa"; // NEW: import menu icon
+import { FaBars } from "react-icons/fa";
+import { useAccount } from "wagmi";
+import WalletButton from "@/Wallet/WalletButton";
+import ProfileMenu from "@/Wallet/ProfileMenu";
 
 const Sidebar = ({
   sessions,
@@ -11,6 +14,7 @@ const Sidebar = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const sidebarRef = useRef(null);
+  const { isConnected } = useAccount();
 
   useEffect(() => {
     const handleResize = () => {
@@ -22,6 +26,7 @@ const Sidebar = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Close on outside click (desktop)
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (
@@ -47,22 +52,22 @@ const Sidebar = ({
 
   return (
     <>
-      {/* Mobile toggle when CLOSED (floating button) */}
+      {/* Mobile toggle when CLOSED */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-full bg-gray-700 hover:bg-gray-600
+          className="fixed top-4 left-4  z-50 md:hidden p-2 rounded-full bg-gray-700 hover:bg-gray-600
                      focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
           aria-label="Open sidebar"
         >
-          <FaBars className="w-5 h-5 text-white" /> {/* Menu icon */}
+          <FaBars className="w-5 h-5 text-white" />
         </button>
       )}
 
       {/* Backdrop for mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 md:hidden z-30"
+          className="fixed inset-0 bg-black/40 md:hidden z-30 "
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -71,12 +76,11 @@ const Sidebar = ({
       <div
         ref={sidebarRef}
         className={`h-full bg-gray-900 text-white shadow-lg transition-all duration-300 ease-in-out
-                    flex flex-col overflow-hidden
-                    md:flex md:flex-col
+                    flex flex-col overflow-hidden 
                     ${isOpen ? "w-64 md:w-72 translate-x-0" : "w-0 md:w-16 -translate-x-full md:translate-x-0"}
                     fixed md:static inset-y-0 left-0 z-40`}
       >
-        {/* Mobile toggle when OPEN (inside, top-right) */}
+        {/* Mobile toggle when OPEN */}
         {isOpen && (
           <button
             onClick={() => setIsOpen(false)}
@@ -84,26 +88,39 @@ const Sidebar = ({
                        focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 z-50"
             aria-label="Close sidebar"
           >
-            <FaBars className="w-5 h-5 text-white" /> {/* Same menu icon */}
+            <FaBars className="w-5 h-5 text-white" />
           </button>
         )}
 
-        {/* Header */}
+        {/* Header row with collapse button (desktop) */}
         <div
           className={`p-4.5 flex items-center ${
             isOpen ? "justify-between" : "justify-center"
           } bg-gray-800/50 border-b border-gray-700 md:flex md:items-center md:justify-between`}
         >
-          {isOpen && <h2 className="text-base md:text-lg font-semibold truncate">Chat Sessions</h2>}
-
-          {/* Desktop toggle */}
+          {isOpen && <h2 className="text-base md:text-lg font-semibold truncate">Menu</h2>}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="hidden md:inline-flex p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="hidden md:inline-flex p-2 rounded-full bg-gray-700 hover:bg-gray-600
+                       transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             <FaBars className={`w-5 h-5 text-white transition-transform duration-300 ${isOpen ? "" : "rotate-180"}`} />
           </button>
+        </div>
+
+        {/* === Profile Section === */}
+        <div className={`px-3 pt-3 ${isOpen ? "block" : "hidden md:block"}`}>
+          <div className="text-xs uppercase tracking-wide text-white/60 mb-2">Profile</div>
+          {isConnected ? (
+            // ✅ ProfileMenu renders the black Profile button,
+            // and its submenu opens directly BELOW it
+            <ProfileMenu variant="sidebar" />
+          ) : (
+            // If WalletButton supports className, we style it black here too:
+            // <WalletButton className="w-full rounded-lg px-3 py-2 bg-black text-white hover:bg-neutral-900" />
+            <WalletButton />
+          )}
         </div>
 
         {/* New Chat Button */}

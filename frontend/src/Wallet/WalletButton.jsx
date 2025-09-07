@@ -122,7 +122,7 @@ export default function WalletButton() {
   }
 
   // Shared pill classes so "Signed in" == "Logout" size/shape
-  const pill = "inline-flex items-center justify-center rounded-xl bg-black text-white px-4 py-2 text-sm font-semibold";
+  const pill = "rounded-full px-4 py-2 text-sm font-semibold bg-black text-white hover:bg-neutral-900 shadow-sm";
 
   return (
     <div className="flex items-center gap-3">
