@@ -30,7 +30,6 @@ const App = () => {
           path: "/chat",
           element: <ChatApp />,
         },
-       
       ],
     },
   ]);

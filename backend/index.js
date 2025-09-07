@@ -11,7 +11,6 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-
 const allowedOrigins = [
   process.env.FRONTEND_URL,       // production (e.g. https://yourfrontend.com)
    process.env.FRONTEND_URL1,
@@ -28,7 +27,7 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 app.set("trust proxy", 1);
