@@ -67,7 +67,8 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
   };
 
   return (
-<div className="flex flex-col h-full min-h-[100svh] bg-black/85 text-white">
+    // Ensure component always fills the small viewport height on mobile
+    <div className="flex flex-col h-full min-h-[100svh] bg-black/85 text-white">
       {/* Upgrade banner — responsive & sidebar-safe */}
       <div className="sticky top-0 z-20">
         <div className="px-2 sm:px-4 pt-3 bg-black/80 backdrop-blur">
@@ -91,8 +92,9 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <div className="flex-1 flex justify-center overflow-y-auto py-4 sm:py-6">
+      {/* Chat Messages
+          Add bottom padding so last messages aren't hidden behind the fixed bar on mobile */}
+      <div className="flex-1 flex justify-center overflow-y-auto py-4 sm:py-6 pb-28 md:pb-6">
         <div className="w-full max-w-full sm:max-w-3xl px-2 sm:px-4 space-y-4">
           {messages.map((m, i) => (
             <div key={i}>
@@ -127,33 +129,42 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
         </div>
       </div>
 
-      {/* Input Bar */}
-      <div className="p-2 sm:p-4 flex justify-center">
-        <div className="w-full max-w-full sm:max-w-3xl flex items-center bg-gray-900 rounded-full px-3 sm:px-4">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={1}
-            className="flex-1 bg-transparent text-white outline-none resize-none py-2 sm:py-3
-                       text-sm sm:text-base min-h-[40px] sm:min-h-[48px]"
-            placeholder="Type your message..."
-          />
-          <button
-            onClick={handleSend}
-            className="ml-2 sm:ml-3 bg-green-600 hover:bg-green-500 px-4 sm:px-5 py-2 rounded-full text-white"
-            aria-label="Send message"
-          >
-            <svg
-              className="w-5 h-5 sm:w-6 sm:h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
+      {/* Input Bar — fixed to bottom on mobile; sticky inside column on md+ */}
+      <div
+        className="
+          fixed inset-x-0 bottom-0 z-30
+          md:sticky md:bottom-0 md:inset-x-auto
+          bg-black/85 backdrop-blur supports-[backdrop-filter]:bg-black/60
+          pb-[env(safe-area-inset-bottom)]
+        "
+      >
+        <div className="w-full max-w-full sm:max-w-3xl mx-auto p-2 sm:p-4">
+          <div className="flex items-center bg-gray-900 rounded-full px-3 sm:px-4">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              className="flex-1 bg-transparent text-white outline-none resize-none py-2 sm:py-3
+                         text-sm sm:text-base min-h-[40px] sm:min-h-[48px]"
+              placeholder="Type your message..."
+            />
+            <button
+              onClick={handleSend}
+              className="ml-2 sm:ml-3 bg-green-600 hover:bg-green-500 px-4 sm:px-5 py-2 rounded-full text-white"
+              aria-label="Send message"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </button>
+              <svg
+                className="w-5 h-5 sm:w-6 sm:h-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
