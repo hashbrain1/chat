@@ -7,7 +7,7 @@ const AppLayout = () => {
   const location = useLocation();
 
   // pages where you don’t want Navbar & Footer
-  const hideLayout = ["/chat"];
+  const hideLayout = ["/chat","/whitepaper"];
 
   const shouldHide = hideLayout.includes(location.pathname);
 

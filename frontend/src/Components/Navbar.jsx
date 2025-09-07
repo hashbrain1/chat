@@ -105,7 +105,8 @@ const Navbar = () => {
   const navItems = [
     { label: "Home", to: "/", type: "link" },
     { label: "Product", to: "/product", type: "link" },
-    { label: "Docs", to: "/docs", type: "link" },
+    // 👇 Docs opens in a new tab
+    { label: "Docs", to: "/whitepaper", type: "link", newTab: true },
     { label: "Ecosystem", href: "#", type: "a" },
   ];
 
@@ -139,6 +140,8 @@ const Navbar = () => {
                 <Link
                   key={item.label}
                   to={item.to}
+                  target={item.newTab ? "_blank" : undefined}
+                  rel={item.newTab ? "noopener noreferrer" : undefined}
                   className="text-gray-900 hover:text-gray-700 text-sm font-medium"
                 >
                   {item.label}
@@ -164,12 +167,10 @@ const Navbar = () => {
               Chat AI
             </Link>
 
-            {/* Profile (connected) OR Wallet (you can style WalletButton similarly) */}
+            {/* Profile (connected) OR Wallet */}
             {isDesktop && (isConnected ? (
               <ProfileMenu />
             ) : (
-              // If your WalletButton supports className, pass the black style:
-              // <WalletButton className="rounded-full px-4 py-2 text-sm font-semibold bg-black text-white hover:bg-neutral-900 shadow-sm" />
               <WalletButton />
             ))}
           </div>
@@ -222,6 +223,8 @@ const Navbar = () => {
               <Link
                 key={`m-${item.label}`}
                 to={item.to}
+                target={item.newTab ? "_blank" : undefined}
+                rel={item.newTab ? "noopener noreferrer" : undefined}
                 onClick={handleMobileClick}
                 className="block rounded-xl px-3 py-3 hover:bg-gray-100 text-base font-medium"
               >
@@ -255,8 +258,6 @@ const Navbar = () => {
             {!isDesktop && (isConnected ? (
               <ProfileMenu />
             ) : (
-              // If WalletButton supports className, pass black style here too:
-              // <WalletButton className="rounded-full px-4 py-2 text-sm font-semibold bg-black text-white hover:bg-neutral-900 shadow-sm" />
               <WalletButton />
             ))}
           </div>

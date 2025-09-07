@@ -8,6 +8,7 @@ import ProductDescription from "./Pages/ProductDescription";
 import WalletProvider from "./Wallet/WalletProvider";
 import WalletButton from "./Wallet/WalletButton";
 import Upgrade from "./Components/Upgrade";
+import Whitepaper from "./Pages/Whitepaper";
 
 const App = () => {
   const router = createBrowserRouter([
@@ -34,6 +35,10 @@ const App = () => {
            {
           path: "/upgrade",
           element: <Upgrade />,
+        },
+         {
+          path: "/whitepaper",
+          element: <Whitepaper />,
         },
       ],
     },
