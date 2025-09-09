@@ -16,9 +16,20 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
   const [authed, setAuthed] = useState(false);
   const [signing, setSigning] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [blocked, setBlocked] = useState(false); // prevent retry loop after cancel
+  const [blocked, setBlocked] = useState(false);
 
-  // ✅ Check backend session on mount
+  // ✅ detect mobile
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Check if already authenticated
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -33,20 +44,17 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     checkSession();
   }, []);
 
-  // ✅ Run SIWE only if wallet connected + no session
+  // SIWE login
   useEffect(() => {
     const runSiwe = async () => {
       if (!isConnected || !walletClient || !address || authed || signing || loading || blocked)
         return;
       try {
         setSigning(true);
-
-        // 1. Get nonce
         const { data } = await api.get("/auth/nonce", { withCredentials: true });
         const nonce = data?.nonce;
 
-        // 2. Build SIWE message
-        const domain = window.location.host; // frontend domain only
+        const domain = window.location.host;
         const message = prepareSiweMessage({
           domain,
           address: toChecksum(address),
@@ -57,13 +65,8 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
           nonce,
         });
 
-        // 3. Sign message
-        const signature = await walletClient.signMessage({
-          account: address,
-          message,
-        });
+        const signature = await walletClient.signMessage({ account: address, message });
 
-        // 4. Verify with backend
         const res = await api.post(
           "/auth/verify",
           { message, signature },
@@ -72,45 +75,44 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
 
         if (res.data?.ok) {
           setAuthed(true);
-          if (typeof onLogin === "function") onLogin(); // ✅ refresh sessions
+          if (typeof onLogin === "function") onLogin();
         }
       } catch (err) {
         console.error("❌ SIWE failed:", err);
-
-        // If user cancels signing → stop retry loop
         if (err?.code === 4001 || err?.message?.toLowerCase().includes("user rejected")) {
           setBlocked(true);
         }
-
         setAuthed(false);
       } finally {
         setSigning(false);
       }
     };
-
     runSiwe();
   }, [isConnected, walletClient, address, chainId, authed, signing, loading, blocked, onLogin]);
 
-  // ✅ Logout clears cookies + sessions + wallet
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout", {}, { withCredentials: true });
     } catch (err) {
       console.error("Logout error:", err);
     }
-
     setAuthed(false);
     setBlocked(false);
     disconnect();
-
-    if (typeof onLogout === "function") onLogout(); // ✅ clear chat history immediately
+    if (typeof onLogout === "function") onLogout();
   };
 
   // ✅ UI states
   if (!isConnected) return <ConnectButton chainStatus="icon" showBalance={false} />;
   if (loading) return <div className="text-sm text-gray-500">Checking session…</div>;
   if (signing && !authed) return <div className="text-sm text-gray-500">Check your wallet…</div>;
-  if (authed) return <ProfileMenu onLogout={handleLogout} variant={variant} />;
+  if (authed)
+    return (
+      <ProfileMenu
+        onLogout={handleLogout}
+        variant={isMobile ? "mobile" : variant} // ✅ choose mobile if < md
+      />
+    );
   if (blocked) {
     return (
       <button

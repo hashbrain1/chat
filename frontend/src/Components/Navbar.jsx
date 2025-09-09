@@ -18,7 +18,7 @@ const Navbar = ({ onLogout, onLogin }) => {
       : true
   );
 
-  // Watch media query (desktop vs mobile)
+  // Track desktop vs mobile
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 768px)");
     const onChange = (e) => setIsDesktop(e.matches);
@@ -31,7 +31,7 @@ const Navbar = ({ onLogout, onLogin }) => {
     };
   }, []);
 
-  // Measure navbar height so mobile panel attaches correctly
+  // Measure navbar height
   useEffect(() => {
     const measureBar = () => {
       if (barRef.current) {
@@ -44,7 +44,7 @@ const Navbar = ({ onLogout, onLogin }) => {
     return () => window.removeEventListener("resize", measureBar);
   }, []);
 
-  // ESC to close
+  // ESC closes menu
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === "Escape") setOpen(false);
@@ -53,7 +53,7 @@ const Navbar = ({ onLogout, onLogin }) => {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // Close when clicking outside
+  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handleOutside = (e) => {
@@ -72,13 +72,34 @@ const Navbar = ({ onLogout, onLogin }) => {
     };
   }, [open]);
 
-  // 🔑 Fix: adjust panel height when toggling mobile menu
+  // Compute height for mobile dropdown
+  const recalcPanelHeight = () => {
+    if (!contentRef.current) return;
+    const full = contentRef.current.scrollHeight;
+    setPanelH(open ? full : 0);
+  };
+
   useEffect(() => {
-    if (open && contentRef.current) {
-      setPanelH(contentRef.current.scrollHeight);
-    } else {
-      setPanelH(0);
-    }
+    recalcPanelHeight();
+  }, [open]);
+
+  // ✅ Listen to ProfileMenu toggle to expand mobile panel
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const ro = new ResizeObserver(() => {
+      if (open) recalcPanelHeight();
+    });
+    ro.observe(contentRef.current);
+
+    const onToggle = () => {
+      if (open) recalcPanelHeight();
+    };
+    window.addEventListener("hb-profile-toggle", onToggle);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("hb-profile-toggle", onToggle);
+    };
   }, [open]);
 
   const navItems = [
@@ -99,7 +120,6 @@ const Navbar = ({ onLogout, onLogin }) => {
                       bg-white text-gray-900 backdrop-blur px-3 sm:px-5 py-2
                       shadow-md ring-1 ring-black/5 ${open ? "rounded-b-none" : "rounded-2xl"}`}
         >
-          {/* Brand */}
           <Link to="/" className="flex items-center gap-2 group">
             <img
               src="/Images/logo.png"
@@ -111,7 +131,6 @@ const Navbar = ({ onLogout, onLogin }) => {
             </span>
           </Link>
 
-          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-6">
             {navItems.map((item) =>
               item.type === "link" ? (
@@ -135,7 +154,6 @@ const Navbar = ({ onLogout, onLogin }) => {
               )
             )}
 
-            {/* Chat AI button */}
             <Link
               to="/chat"
               target="_blank"
@@ -150,7 +168,6 @@ const Navbar = ({ onLogout, onLogin }) => {
             )}
           </div>
 
-          {/* Mobile hamburger */}
           <button
             type="button"
             aria-label={open ? "Close menu" : "Open menu"}
@@ -182,7 +199,7 @@ const Navbar = ({ onLogout, onLogin }) => {
         </div>
       </div>
 
-      {/* Mobile drop-down */}
+      {/* Mobile dropdown */}
       <div
         ref={panelRef}
         id="mobile-menu"
@@ -217,7 +234,6 @@ const Navbar = ({ onLogout, onLogin }) => {
             )
           )}
 
-          {/* Chat AI (mobile) */}
           <Link
             to="/chat"
             target="_blank"
@@ -228,7 +244,6 @@ const Navbar = ({ onLogout, onLogin }) => {
             Chat AI
           </Link>
 
-          {/* Mobile: Wallet */}
           <div className="mt-2">
             {!isDesktop && (
               <WalletButton variant="mobile" onLogout={onLogout} onLogin={onLogin} />
