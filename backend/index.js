@@ -13,7 +13,7 @@ const port = process.env.PORT || 5000;
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  // process.env.FRONTEND_URL1,
+  process.env.FRONTEND_URL1,
 ].filter(Boolean);
 
 app.use(

@@ -18,6 +18,7 @@ const Navbar = ({ onLogout, onLogin }) => {
       : true
   );
 
+  // Watch media query (desktop vs mobile)
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 768px)");
     const onChange = (e) => setIsDesktop(e.matches);
@@ -30,6 +31,7 @@ const Navbar = ({ onLogout, onLogin }) => {
     };
   }, []);
 
+  // Measure navbar height so mobile panel attaches correctly
   useEffect(() => {
     const measureBar = () => {
       if (barRef.current) {
@@ -42,6 +44,7 @@ const Navbar = ({ onLogout, onLogin }) => {
     return () => window.removeEventListener("resize", measureBar);
   }, []);
 
+  // ESC to close
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === "Escape") setOpen(false);
@@ -50,6 +53,7 @@ const Navbar = ({ onLogout, onLogin }) => {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  // Close when clicking outside
   useEffect(() => {
     if (!open) return;
     const handleOutside = (e) => {
@@ -66,6 +70,15 @@ const Navbar = ({ onLogout, onLogin }) => {
       document.removeEventListener("mousedown", handleOutside);
       document.removeEventListener("touchstart", handleOutside);
     };
+  }, [open]);
+
+  // 🔑 Fix: adjust panel height when toggling mobile menu
+  useEffect(() => {
+    if (open && contentRef.current) {
+      setPanelH(contentRef.current.scrollHeight);
+    } else {
+      setPanelH(0);
+    }
   }, [open]);
 
   const navItems = [
@@ -86,6 +99,7 @@ const Navbar = ({ onLogout, onLogin }) => {
                       bg-white text-gray-900 backdrop-blur px-3 sm:px-5 py-2
                       shadow-md ring-1 ring-black/5 ${open ? "rounded-b-none" : "rounded-2xl"}`}
         >
+          {/* Brand */}
           <Link to="/" className="flex items-center gap-2 group">
             <img
               src="/Images/logo.png"
@@ -97,6 +111,7 @@ const Navbar = ({ onLogout, onLogin }) => {
             </span>
           </Link>
 
+          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-6">
             {navItems.map((item) =>
               item.type === "link" ? (
@@ -120,6 +135,7 @@ const Navbar = ({ onLogout, onLogin }) => {
               )
             )}
 
+            {/* Chat AI button */}
             <Link
               to="/chat"
               target="_blank"
@@ -134,6 +150,7 @@ const Navbar = ({ onLogout, onLogin }) => {
             )}
           </div>
 
+          {/* Mobile hamburger */}
           <button
             type="button"
             aria-label={open ? "Close menu" : "Open menu"}
@@ -165,6 +182,7 @@ const Navbar = ({ onLogout, onLogin }) => {
         </div>
       </div>
 
+      {/* Mobile drop-down */}
       <div
         ref={panelRef}
         id="mobile-menu"
@@ -199,6 +217,7 @@ const Navbar = ({ onLogout, onLogin }) => {
             )
           )}
 
+          {/* Chat AI (mobile) */}
           <Link
             to="/chat"
             target="_blank"
@@ -209,6 +228,7 @@ const Navbar = ({ onLogout, onLogin }) => {
             Chat AI
           </Link>
 
+          {/* Mobile: Wallet */}
           <div className="mt-2">
             {!isDesktop && (
               <WalletButton variant="mobile" onLogout={onLogout} onLogin={onLogin} />
