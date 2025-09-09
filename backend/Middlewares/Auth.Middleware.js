@@ -9,7 +9,8 @@ export default function requireAuth(req, res, next) {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.user = { id: payload.sub, address: (payload.address || "").toLowerCase() };
     return next();
-  } catch {
+  } catch (err) {
+    console.error("❌ Auth error:", err.message);
     return res.status(401).json({ error: "Invalid/expired session" });
   }
 }
@@ -20,7 +21,9 @@ export function maybeAuth(req, _res, next) {
     try {
       const p = jwt.verify(token, process.env.JWT_SECRET);
       req.user = { id: p.sub, address: p.address.toLowerCase() };
-    } catch { /* ignore */ }
+    } catch {
+      // ignore
+    }
   }
   next();
 }

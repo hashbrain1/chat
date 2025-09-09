@@ -1,150 +1,126 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import {
-  useAccount,
-  useChainId,
-  useDisconnect,
-  useWalletClient,
-} from "wagmi";
+import { useAccount, useWalletClient, useChainId, useDisconnect } from "wagmi";
 import { getAddress as toChecksum } from "viem";
+
+import ProfileMenu from "@/Wallet/ProfileMenu";
 import api from "@/lib/axios";
 import { prepareSiweMessage } from "@/lib/siwe";
 
-export default function WalletButton() {
-  const { address, isConnected, status } = useAccount(); // 'connecting' | 'reconnecting' | 'connected' | 'disconnected'
+export default function WalletButton({ variant = "navbar", onLogout, onLogin }) {
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const chainId = useChainId();
   const { disconnect } = useDisconnect();
-  const { data: walletClient } = useWalletClient();
 
   const [authed, setAuthed] = useState(false);
   const [signing, setSigning] = useState(false);
-  const [autoTried, setAutoTried] = useState(false);
-  const prevStatus = useRef(status);
-  const loggingOutRef = useRef(false);
+  const [loading, setLoading] = useState(true);
+  const [blocked, setBlocked] = useState(false); // prevent retry loop after cancel
 
-  // Keep UI in sync with server session after refresh/account change
+  // ✅ Check backend session on mount
   useEffect(() => {
-    setAutoTried(false);
-    api.get("/auth/me")
-      .then(({ data }) => setAuthed(!!data?.authenticated))
-      .catch(() => setAuthed(false));
-  }, [address]);
-
-  // Auto SIWE when wallet is truly ready
-  useEffect(() => {
-    if (
-      status === "connected" &&
-      isConnected &&
-      address &&
-      walletClient &&
-      !authed &&
-      !signing &&
-      !autoTried
-    ) {
-      (async () => {
-        try {
-          setSigning(true);
-          setAutoTried(true);
-
-          // 1) nonce (sets siwe_nonce cookie)
-          const { data } = await api.get("/auth/nonce");
-          const nonce = data?.nonce;
-          if (!nonce) throw new Error("No nonce from server");
-
-          // 2) domain must equal backend host
-          const backendHost = new URL(
-            import.meta.env.VITE_BASE_PATH || window.location.origin
-          ).host;
-
-          // 3) build + sign message
-          const message = prepareSiweMessage({
-            domain: backendHost,
-            address: toChecksum(address),
-            statement: "Sign in to Hash Brain using your wallet.",
-            uri: window.location.origin,
-            version: "1",
-            chainId: chainId || 1,
-            nonce,
-          });
-
-          const signature = await walletClient.signMessage({
-            account: address,
-            message,
-          });
-
-          // 4) verify (sets hb_sess cookie)
-          const res = await api.post("/auth/verify", { message, signature });
-          setAuthed(!!res.data?.ok);
-        } catch (e) {
-          console.error("Auto SIWE failed:", e);
-          setAuthed(false);
-        } finally {
-          setSigning(false);
-        }
-      })();
-    }
-  }, [
-    status,
-    isConnected,
-    address,
-    walletClient,
-    authed,
-    signing,
-    autoTried,
-    chainId,
-  ]);
-
-  // Log out server session when user truly disconnects (connected → disconnected)
-  useEffect(() => {
-    const prev = prevStatus.current;
-    if (prev === "connected" && status === "disconnected" && authed && !loggingOutRef.current) {
-      loggingOutRef.current = true;
-      api.post("/auth/logout").finally(() => {
+    const checkSession = async () => {
+      try {
+        const { data } = await api.get("/auth/me", { withCredentials: true });
+        setAuthed(data?.authenticated || false);
+      } catch {
         setAuthed(false);
-        loggingOutRef.current = false;
-      });
-    }
-    prevStatus.current = status;
-  }, [status, authed]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkSession();
+  }, []);
 
-  async function handleLogout() {
-    if (loggingOutRef.current) return;
-    loggingOutRef.current = true;
+  // ✅ Run SIWE only if wallet connected + no session
+  useEffect(() => {
+    const runSiwe = async () => {
+      if (!isConnected || !walletClient || !address || authed || signing || loading || blocked)
+        return;
+      try {
+        setSigning(true);
+
+        // 1. Get nonce
+        const { data } = await api.get("/auth/nonce", { withCredentials: true });
+        const nonce = data?.nonce;
+
+        // 2. Build SIWE message
+        const domain = window.location.host; // frontend domain only
+        const message = prepareSiweMessage({
+          domain,
+          address: toChecksum(address),
+          statement: "Sign in to Hash Brain using your wallet.",
+          uri: window.location.origin,
+          version: "1",
+          chainId: chainId || 1,
+          nonce,
+        });
+
+        // 3. Sign message
+        const signature = await walletClient.signMessage({
+          account: address,
+          message,
+        });
+
+        // 4. Verify with backend
+        const res = await api.post(
+          "/auth/verify",
+          { message, signature },
+          { withCredentials: true }
+        );
+
+        if (res.data?.ok) {
+          setAuthed(true);
+          if (typeof onLogin === "function") onLogin(); // ✅ refresh sessions
+        }
+      } catch (err) {
+        console.error("❌ SIWE failed:", err);
+
+        // If user cancels signing → stop retry loop
+        if (err?.code === 4001 || err?.message?.toLowerCase().includes("user rejected")) {
+          setBlocked(true);
+        }
+
+        setAuthed(false);
+      } finally {
+        setSigning(false);
+      }
+    };
+
+    runSiwe();
+  }, [isConnected, walletClient, address, chainId, authed, signing, loading, blocked, onLogin]);
+
+  // ✅ Logout clears cookies + sessions + wallet
+  const handleLogout = async () => {
     try {
-      await api.post("/auth/logout"); // clears HttpOnly cookie on server
-      setAuthed(false);
-      if (isConnected) disconnect();  // also disconnect wallet
-    } catch (e) {
-      console.error("logout error", e);
-    } finally {
-      loggingOutRef.current = false;
+      await api.post("/auth/logout", {}, { withCredentials: true });
+    } catch (err) {
+      console.error("Logout error:", err);
     }
+
+    setAuthed(false);
+    setBlocked(false);
+    disconnect();
+
+    if (typeof onLogout === "function") onLogout(); // ✅ clear chat history immediately
+  };
+
+  // ✅ UI states
+  if (!isConnected) return <ConnectButton chainStatus="icon" showBalance={false} />;
+  if (loading) return <div className="text-sm text-gray-500">Checking session…</div>;
+  if (signing && !authed) return <div className="text-sm text-gray-500">Check your wallet…</div>;
+  if (authed) return <ProfileMenu onLogout={handleLogout} variant={variant} />;
+  if (blocked) {
+    return (
+      <button
+        onClick={() => setBlocked(false)}
+        className="text-sm text-red-500 underline"
+      >
+        Sign-in cancelled. Retry?
+      </button>
+    );
   }
 
-  // Shared pill classes so "Signed in" == "Logout" size/shape
-  const pill = "rounded-full px-4 py-2 text-sm font-semibold bg-black text-white hover:bg-neutral-900 shadow-sm";
-
-  return (
-    <div className="flex items-center gap-3">
-      {/* RainbowKit connect pill (themed to black in WalletProvider) */}
-      <ConnectButton accountStatus="address" chainStatus="icon" showBalance={false} />
-
-      {/* Status pill (same padding as Logout) */}
-      {signing ? (
-        <span className={pill}>Signing…</span>
-      ) : authed ? (
-        <span className={pill}>Signed in ✓</span>
-      ) : null}
-
-      {/* Logout pill (same padding) */}
-      {authed && (
-        <button
-          onClick={handleLogout}
-          className={`${pill} hover:opacity-90 focus:ring-2 focus:ring-black/30`}
-        >
-          Logout
-        </button>
-      )}
-    </div>
-  );
+  return <div className="text-sm text-gray-500">Preparing sign-in…</div>;
 }

@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount } from "wagmi";
 
 const truncate = (addr = "") =>
   addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
 
-export default function ProfileMenu({ variant = "navbar" }) {
+export default function ProfileMenu({ variant = "navbar", onLogout }) {
   const { address, isConnected, status } = useAccount();
-  const { disconnect } = useDisconnect();
 
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false); // ✅ new state
+
   const menuRef = useRef(null);
   const btnRef = useRef(null);
 
@@ -34,7 +35,7 @@ export default function ProfileMenu({ variant = "navbar" }) {
     };
   }, [open]);
 
-  // Let containers (e.g., mobile navbar panel) recompute height
+  // Let containers recompute height
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("hb-profile-toggle"));
   }, [open]);
@@ -42,20 +43,32 @@ export default function ProfileMenu({ variant = "navbar" }) {
   if (!isConnected) return null;
 
   const isSidebar = variant === "sidebar";
-  const isMobile  = variant === "mobile";
+  const isMobile = variant === "mobile";
 
-  // Black button with white text
   const baseButton =
     "inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-white bg-black hover:bg-neutral-900 transition-colors shadow-sm cursor-pointer";
 
-  // Submenu cards
-  // navbar = absolute dropdown; sidebar/mobile = in-flow and responsive width
-  const cardNavbar  = "absolute left-0 top-full mt-3 z-50 w-64 rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl ring-1 ring-black/5 overflow-hidden";
-  const cardSidebar = "mt-3 w-full md:w-64 max-w-full rounded-xl border border-gray-700 bg-gray-800 text-gray-100 shadow-lg ring-1 ring-white/10 overflow-hidden";
-  const cardMobile  = "mt-3 w-full rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl ring-1 ring-black/5 overflow-hidden";
+  const cardNavbar =
+    "absolute left-0 top-full mt-3 z-50 w-64 rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl ring-1 ring-black/5 overflow-hidden";
+  const cardSidebar =
+    "mt-3 w-full md:w-64 max-w-full rounded-xl border border-gray-700 bg-gray-800 text-gray-100 shadow-lg ring-1 ring-white/10 overflow-hidden";
+  const cardMobile =
+    "mt-3 w-full rounded-xl border border-gray-200 bg-white text-gray-900 shadow-xl ring-1 ring-black/5 overflow-hidden";
 
   const row = "flex items-center justify-between px-3 py-2";
-  const avatar = "inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-black text-xs font-bold";
+  const avatar =
+    "inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-black text-xs font-bold";
+
+  // ✅ Logout handler with loading
+  const handleClickLogout = async () => {
+    setLoggingOut(true);
+    try {
+      if (onLogout) await onLogout();
+    } finally {
+      setLoggingOut(false);
+      setOpen(false);
+    }
+  };
 
   return (
     <div className={isSidebar ? "w-full min-w-0" : "relative"}>
@@ -92,7 +105,13 @@ export default function ProfileMenu({ variant = "navbar" }) {
           role="menu"
         >
           {/* Address */}
-          <div className={isSidebar ? "px-3 pt-3 pb-3 border-b border-gray-700" : "px-3 pt-3 pb-3 border-b border-gray-200"}>
+          <div
+            className={
+              isSidebar
+                ? "px-3 pt-3 pb-3 border-b border-gray-700"
+                : "px-3 pt-3 pb-3 border-b border-gray-200"
+            }
+          >
             <div className="text-xs uppercase tracking-wide opacity-70 mb-1">Wallet</div>
             <div className="flex items-center justify-between gap-2">
               <code className="text-sm break-words">{truncate(address)}</code>
@@ -110,9 +129,10 @@ export default function ProfileMenu({ variant = "navbar" }) {
                 >
                   Copy
                 </button>
-                {/* Copy feedback */}
                 <span
-                  className={`absolute -top-7 right-0 text-xs rounded-md px-2 py-1 bg-emerald-500 text-white shadow transition-opacity duration-150 ${copied ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                  className={`absolute -top-7 right-0 text-xs rounded-md px-2 py-1 bg-emerald-500 text-white shadow transition-opacity duration-150 ${
+                    copied ? "opacity-100" : "opacity-0 pointer-events-none"
+                  }`}
                   aria-live="polite"
                 >
                   Copied!
@@ -133,13 +153,15 @@ export default function ProfileMenu({ variant = "navbar" }) {
           {/* Logout */}
           <div className="px-3 pt-1 pb-5">
             <button
-              onClick={() => {
-                setOpen(false);
-                disconnect();
-              }}
-              className="w-full rounded-md bg-black hover:bg-neutral-900 text-white text-sm py-2 cursor-pointer"
+              onClick={handleClickLogout}
+              disabled={loggingOut}
+              className={`w-full rounded-md text-white text-sm py-2 cursor-pointer transition-colors ${
+                loggingOut
+                  ? "bg-gray-500 cursor-wait"
+                  : "bg-black hover:bg-neutral-900"
+              }`}
             >
-              Logout
+              {loggingOut ? "Logging out…" : "Logout"}
             </button>
           </div>
         </div>

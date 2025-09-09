@@ -17,39 +17,24 @@ import {
 } from "wagmi/chains";
 import "@rainbow-me/rainbowkit/styles.css";
 
+// Build wagmi config with RainbowKit helper (no providers/public in v2)
 const config = getDefaultConfig({
   appName: "Hash Brain",
-  projectId: import.meta.env.VITE_WC_PROJECT_ID || "",
+  projectId: import.meta.env.VITE_WC_PROJECT_ID || "", // WalletConnect projectId
   chains: [mainnet, polygon, arbitrum, optimism, base, bsc, sepolia],
   ssr: false,
-  autoConnect: true, // reconnect after refresh
+  autoConnect: true,
 });
 
 const queryClient = new QueryClient();
 
 export default function WalletProvider({ children }) {
-  // Theme the RainbowKit connect pill to black/white so it matches your navbar
-  const themed = (() => {
-    const base = darkTheme({
-      accentColor: "#000000",
-      accentColorForeground: "#ffffff",
-      borderRadius: "large",
-      overlayBlur: "small",
-    });
-    return {
-      ...base,
-      colors: {
-        ...base.colors,
-        connectButtonBackground: "#000000",
-        connectButtonInnerBackground: "#000000",
-        connectButtonText: "#ffffff",
-      },
-      radii: {
-        ...base.radii,
-        connectButton: "0.75rem", // rounded-xl
-      },
-    };
-  })();
+  const themed = darkTheme({
+    accentColor: "#000000",
+    accentColorForeground: "#ffffff",
+    borderRadius: "large",
+    overlayBlur: "small",
+  });
 
   return (
     <WagmiProvider config={config}>

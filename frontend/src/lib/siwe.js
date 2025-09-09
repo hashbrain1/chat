@@ -1,4 +1,4 @@
-// Minimal EIP-4361 message builder for the browser (no "siwe" lib needed).
+// Minimal EIP-4361 message builder
 export function prepareSiweMessage({
   domain,
   address,

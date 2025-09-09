@@ -1,10 +1,8 @@
 import WalletButton from "@/Wallet/WalletButton";
-import ProfileMenu from "@/Wallet/ProfileMenu";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAccount } from "wagmi";
 
-const Navbar = () => {
+const Navbar = ({ onLogout, onLogin }) => {
   const [open, setOpen] = useState(false);
 
   const barRef = useRef(null);
@@ -14,14 +12,12 @@ const Navbar = () => {
   const [barH, setBarH] = useState(0);
   const [panelH, setPanelH] = useState(0);
 
-  const { isConnected } = useAccount();
-
-  // Desktop media query
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(min-width: 768px)").matches
       : true
   );
+
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 768px)");
     const onChange = (e) => setIsDesktop(e.matches);
@@ -34,7 +30,6 @@ const Navbar = () => {
     };
   }, []);
 
-  // Measure navbar height so mobile panel attaches right under it
   useEffect(() => {
     const measureBar = () => {
       if (barRef.current) {
@@ -47,7 +42,6 @@ const Navbar = () => {
     return () => window.removeEventListener("resize", measureBar);
   }, []);
 
-  // ESC to close
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === "Escape") setOpen(false);
@@ -56,7 +50,6 @@ const Navbar = () => {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // Close when clicking outside
   useEffect(() => {
     if (!open) return;
     const handleOutside = (e) => {
@@ -67,45 +60,17 @@ const Navbar = () => {
         setOpen(false);
       }
     };
-    const options = { passive: true };
     document.addEventListener("mousedown", handleOutside);
-    document.addEventListener("touchstart", handleOutside, options);
+    document.addEventListener("touchstart", handleOutside, { passive: true });
     return () => {
       document.removeEventListener("mousedown", handleOutside);
-      document.removeEventListener("touchstart", handleOutside, options);
-    };
-  }, [open]);
-
-  // Compute natural content height for smooth height animation
-  const recalcPanelHeight = () => {
-    if (!contentRef.current) return;
-    const full = contentRef.current.scrollHeight;
-    setPanelH(open ? full : 0);
-  };
-
-  useEffect(() => {
-    recalcPanelHeight();
-  }, [open]);
-
-  // Auto-resize when inner content grows/shrinks (e.g., Profile submenu)
-  useEffect(() => {
-    if (!contentRef.current) return;
-    const ro = new ResizeObserver(() => {
-      if (open) recalcPanelHeight();
-    });
-    ro.observe(contentRef.current);
-    const onToggle = () => open && recalcPanelHeight();
-    window.addEventListener("hb-profile-toggle", onToggle);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("hb-profile-toggle", onToggle);
+      document.removeEventListener("touchstart", handleOutside);
     };
   }, [open]);
 
   const navItems = [
     { label: "Home", to: "/", type: "link" },
     { label: "Product", to: "/product", type: "link" },
-    // 👇 Docs opens in a new tab
     { label: "Docs", to: "/whitepaper", type: "link", newTab: true },
     { label: "Ecosystem", href: "#", type: "a" },
   ];
@@ -121,7 +86,6 @@ const Navbar = () => {
                       bg-white text-gray-900 backdrop-blur px-3 sm:px-5 py-2
                       shadow-md ring-1 ring-black/5 ${open ? "rounded-b-none" : "rounded-2xl"}`}
         >
-          {/* Brand */}
           <Link to="/" className="flex items-center gap-2 group">
             <img
               src="/Images/logo.png"
@@ -133,7 +97,6 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-6">
             {navItems.map((item) =>
               item.type === "link" ? (
@@ -157,7 +120,6 @@ const Navbar = () => {
               )
             )}
 
-            {/* Chat AI button — black with white text */}
             <Link
               to="/chat"
               target="_blank"
@@ -167,15 +129,11 @@ const Navbar = () => {
               Chat AI
             </Link>
 
-            {/* Profile (connected) OR Wallet */}
-            {isDesktop && (isConnected ? (
-              <ProfileMenu />
-            ) : (
-              <WalletButton />
-            ))}
+            {isDesktop && (
+              <WalletButton variant="navbar" onLogout={onLogout} onLogin={onLogin} />
+            )}
           </div>
 
-          {/* Mobile hamburger */}
           <button
             type="button"
             aria-label={open ? "Close menu" : "Open menu"}
@@ -207,7 +165,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile drop-down (white bg) */}
       <div
         ref={panelRef}
         id="mobile-menu"
@@ -242,7 +199,6 @@ const Navbar = () => {
             )
           )}
 
-          {/* Chat AI (mobile) — black */}
           <Link
             to="/chat"
             target="_blank"
@@ -253,13 +209,10 @@ const Navbar = () => {
             Chat AI
           </Link>
 
-          {/* Mobile: Profile submenu (black button) OR Wallet */}
           <div className="mt-2">
-            {!isDesktop && (isConnected ? (
-              <ProfileMenu />
-            ) : (
-              <WalletButton />
-            ))}
+            {!isDesktop && (
+              <WalletButton variant="mobile" onLogout={onLogout} onLogin={onLogin} />
+            )}
           </div>
         </div>
       </div>

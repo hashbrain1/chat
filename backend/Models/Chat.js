@@ -2,10 +2,10 @@ import mongoose from "mongoose";
 
 const chatSchema = new mongoose.Schema(
   {
-    sessionId: { type: String, required: true, index: true }, // unique chat session
+    sessionId: { type: String, required: true, index: true },
     message: { type: String, required: true },
     response: { type: String, required: true },
-    owner: { type: String, index: true, required: true }, // wallet address
+    owner: { type: String, required: true, index: true },
   },
   { timestamps: true }
 );
@@ -13,5 +13,4 @@ const chatSchema = new mongoose.Schema(
 chatSchema.index({ owner: 1, sessionId: 1, createdAt: 1 });
 
 const chatModel = mongoose.model("Chat", chatSchema);
-
 export default chatModel;
