@@ -8,17 +8,20 @@ import api from "@/lib/axios";
 import { prepareSiweMessage } from "@/lib/siwe";
 
 export default function WalletButton({ variant = "navbar", onLogout, onLogin }) {
-  const { address, isConnected, status } = useAccount();           // connecting | connected | ...
+  const { address, isConnected, status } = useAccount(); // connecting / connected / ...
   const { data: walletClient } = useWalletClient();
   const chainId = useChainId();
   const { disconnect } = useDisconnect();
 
-  const [authed, setAuthed] = useState(false);                     // SIWE session (hb_sess)
+  const [authed, setAuthed] = useState(false);
   const [signing, setSigning] = useState(false);
   const [blocked, setBlocked] = useState(false);
-  const [shouldRunSiwe, setShouldRunSiwe] = useState(false);       // gate SIWE after user-connect
 
-  // ----------------------- Mobile variant for ProfileMenu -----------------------
+  // Prefetched SIWE nonce to speed up mobile
+  const [prefetchedNonce, setPrefetchedNonce] = useState(null);
+  const [prefetching, setPrefetching] = useState(false);
+
+  // Mobile variant for ProfileMenu only (no layout change)
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
@@ -28,7 +31,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // ----------------------- Check cookie session (no wallet popup) ----------------
+  // Check cookie session (does NOT open wallet nor create nonce)
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -42,11 +45,11 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     return () => { mounted = false; };
   }, []);
 
-  // ----------------------- Cross-tab listeners (login/logout) --------------------
+  // Cross-tab sync (login/logout)
   useEffect(() => {
     const onLocalLogout = () => {
       setAuthed(false);
-      // ensure UI resets to connect if wallet got disconnected in another tab
+      setPrefetchedNonce(null);
       try { disconnect(); } catch {}
     };
     const onLocalLogin = () => setAuthed(true);
@@ -81,9 +84,25 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     };
   }, [disconnect]);
 
-  // ----------------------- SIWE gating: only after user connects ----------------
+  // ----------------- Gate SIWE to user-initiated connect -----------------
+  const [shouldRunSiwe, setShouldRunSiwe] = useState(false);
   const lastStatusRef = useRef(status);
   const lastIsConnectedRef = useRef(isConnected);
+
+  // Prefetch nonce as soon as the user starts connecting (mobile win)
+  const prefetchNonce = async () => {
+    if (prefetching || prefetchedNonce) return;
+    try {
+      setPrefetching(true);
+      const { data } = await api.get("/auth/nonce", { withCredentials: true });
+      if (data?.nonce) setPrefetchedNonce(data.nonce);
+    } catch {
+      // no-op; we'll fetch again inside SIWE if needed
+    } finally {
+      setPrefetching(false);
+    }
+  };
+
   useEffect(() => {
     const prevStatus = lastStatusRef.current;
     const prevIsConn = lastIsConnectedRef.current;
@@ -93,6 +112,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     const userInitiated =
       (prevStatus === "connecting" && status === "connected") ||
       (!prevIsConn && isConnected);
+
+    // When user begins connecting, prefetch nonce in parallel (speed boost on mobile)
+    if (status === "connecting") prefetchNonce();
 
     if (userInitiated) setShouldRunSiwe(true);
   }, [status, isConnected]);
@@ -106,9 +128,12 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       try {
         setSigning(true);
 
-        // Request nonce ONLY after user-initiated connect
-        const { data } = await api.get("/auth/nonce", { withCredentials: true });
-        const nonce = data?.nonce;
+        // Use prefetched nonce if available; otherwise fetch now
+        let nonce = prefetchedNonce;
+        if (!nonce) {
+          const { data } = await api.get("/auth/nonce", { withCredentials: true });
+          nonce = data?.nonce;
+        }
 
         const message = prepareSiweMessage({
           domain: window.location.host,
@@ -130,8 +155,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
         if (res.data?.ok) {
           setAuthed(true);
           setBlocked(false);
+          setPrefetchedNonce(null);
 
-          // broadcast login so other tabs refresh (e.g., ChatApp sessions)
+          // broadcast login so other tabs update
           window.dispatchEvent(new CustomEvent("hb-login"));
           if ("BroadcastChannel" in window) {
             new BroadcastChannel("hb-auth").postMessage({ type: "login", t: Date.now() });
@@ -145,22 +171,21 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       } catch (err) {
         console.error("❌ SIWE failed:", err);
         setAuthed(false);
-        setBlocked(true); // user rejected signing etc.
+        setBlocked(true);
       } finally {
         setSigning(false);
         setShouldRunSiwe(false);
       }
     };
     run();
-  }, [shouldRunSiwe, isConnected, walletClient, address, chainId, authed, signing, onLogin]);
+  }, [shouldRunSiwe, isConnected, walletClient, address, chainId, authed, signing, prefetchedNonce, onLogin]);
 
-  // If we somehow have authed=true but the wallet got disconnected in another tab,
-  // immediately fall back to "Connect Wallet" so the button never disappears.
+  // If authed=true but wallet disconnected elsewhere, fall back to Connect
   useEffect(() => {
     if (authed && !isConnected) setAuthed(false);
   }, [authed, isConnected]);
 
-  // ----------------------- Logout -----------------------
+  // Logout
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout", {}, { withCredentials: true });
@@ -169,9 +194,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     }
     setAuthed(false);
     setBlocked(false);
+    setPrefetchedNonce(null);
     disconnect();
 
-    // notify all tabs/pages (Home, ChatApp, etc.)
     window.dispatchEvent(new CustomEvent("hb-logout"));
     if ("BroadcastChannel" in window) {
       new BroadcastChannel("hb-auth").postMessage({ type: "logout", t: Date.now() });
@@ -181,15 +206,13 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     if (typeof onLogout === "function") onLogout();
   };
 
-  // ----------------------- UI (layout preserved) -----------------------
-  // Until SIWE succeeds, ALWAYS show the Connect button.
-  // (No "preparing" text on load; clicking triggers wallet & then SIWE.)
+  // ---------------- UI (layout preserved) ----------------
+  // Until SIWE succeeds, keep showing the standard Connect button.
   if (!authed || !isConnected) {
     if (blocked && !signing) setBlocked(false);
     return <ConnectButton chainStatus="icon" showBalance={false} />;
   }
 
-  // After SIWE success & wallet connected, show your Profile menu.
   return (
     <ProfileMenu
       onLogout={handleLogout}
