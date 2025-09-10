@@ -8,7 +8,6 @@ const ChatApp = () => {
   const [hasMessages, setHasMessages] = useState(false);
   const [sessions, setSessions] = useState([]);
 
-  // ✅ fetch sessions
   const refreshSessions = async () => {
     try {
       const { data } = await getSessions();
@@ -26,7 +25,6 @@ const ChatApp = () => {
     }
   };
 
-  // ✅ clear sessions
   const handleLogout = () => {
     setSessions([]);
     setCurrentSessionId(null);
@@ -35,6 +33,38 @@ const ChatApp = () => {
 
   useEffect(() => {
     refreshSessions();
+
+    // Same-tab custom event
+    const onGlobalLogout = () => handleLogout();
+    window.addEventListener("hb-logout", onGlobalLogout);
+
+    // Cross-tab via BroadcastChannel
+    let bc;
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      bc = new BroadcastChannel("hb-auth");
+      bc.onmessage = (evt) => {
+        if (evt?.data?.type === "logout") handleLogout();
+        if (evt?.data?.type === "login") refreshSessions();
+      };
+    }
+
+    // Cross-tab via localStorage 'storage' event (fallback)
+    const onStorage = (e) => {
+      if (e.key === "hb-auth-evt" && e.newValue) {
+        try {
+          const payload = JSON.parse(e.newValue);
+          if (payload?.type === "logout") handleLogout();
+          if (payload?.type === "login") refreshSessions();
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("hb-logout", onGlobalLogout);
+      window.removeEventListener("storage", onStorage);
+      if (bc) bc.close();
+    };
   }, []);
 
   return (
@@ -49,8 +79,8 @@ const ChatApp = () => {
         currentSessionId={currentSessionId}
         hasMessages={hasMessages}
         setCurrentSessionId={setCurrentSessionId}
-        onLogout={handleLogout}       // ✅ clear sessions
-        onLogin={refreshSessions}     // ✅ reload sessions
+        onLogout={handleLogout}
+        onLogin={refreshSessions}
       />
       <div className="flex-1 h-full overflow-hidden">
         <ChatWindow

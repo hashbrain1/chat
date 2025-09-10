@@ -9,8 +9,45 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
 
   useEffect(() => {
     if (sessionId) loadMessages();
-    else setMessages([]);
+    else {
+      setMessages([]);
+      onMessagesChange([]);
+    }
   }, [sessionId]);
+
+  // 🔔 Clear messages immediately on global/cross-tab logout
+  useEffect(() => {
+    const clearAll = () => {
+      setMessages([]);
+      onMessagesChange([]);
+    };
+
+    window.addEventListener("hb-logout", clearAll);
+
+    let bc;
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      bc = new BroadcastChannel("hb-auth");
+      bc.onmessage = (evt) => {
+        if (evt?.data?.type === "logout") clearAll();
+      };
+    }
+
+    const onStorage = (e) => {
+      if (e.key === "hb-auth-evt" && e.newValue) {
+        try {
+          const payload = JSON.parse(e.newValue);
+          if (payload?.type === "logout") clearAll();
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("hb-logout", clearAll);
+      window.removeEventListener("storage", onStorage);
+      if (bc) bc.close();
+    };
+  }, [onMessagesChange]);
 
   const loadMessages = async () => {
     if (!sessionId) return;
@@ -67,9 +104,8 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
   };
 
   return (
-    // Ensure component always fills the small viewport height on mobile
     <div className="flex flex-col h-full min-h-[100svh] bg-black/85 text-white">
-      {/* Upgrade banner — responsive & sidebar-safe */}
+      {/* …unchanged UI… */}
       <div className="sticky top-0 z-20">
         <div className="px-2 sm:px-4 pt-3 bg-black/80 backdrop-blur">
           <div className="w-full max-w-full sm:max-w-3xl mx-auto">
@@ -92,21 +128,17 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
         </div>
       </div>
 
-      {/* Chat Messages
-          Add bottom padding so last messages aren't hidden behind the fixed bar on mobile */}
+      {/* …rest of your UI unchanged… */}
       <div className="flex-1 flex justify-center overflow-y-auto py-4 sm:py-6 pb-28 md:pb-6">
         <div className="w-full max-w-full sm:max-w-3xl px-2 sm:px-4 space-y-4">
           {messages.map((m, i) => (
             <div key={i}>
-              {/* User bubble */}
               <div className="flex justify-end">
                 <div className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl
                                 max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow">
                   {m.message}
                 </div>
               </div>
-
-              {/* AI bubble */}
               {m.response && (
                 <div className="flex justify-start mt-2">
                   <div className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl
@@ -118,7 +150,6 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
             </div>
           ))}
 
-          {/* AI typing indicator */}
           {isTyping && (
             <div className="flex justify-start mt-2">
               <div className="bg-gray-800 text-gray-400 px-3 sm:px-4 py-2 rounded-2xl italic text-sm sm:text-base">
@@ -129,7 +160,6 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
         </div>
       </div>
 
-      {/* Input Bar — fixed to bottom on mobile; sticky inside column on md+ */}
       <div
         className="
           fixed inset-x-0 bottom-0 z-30
