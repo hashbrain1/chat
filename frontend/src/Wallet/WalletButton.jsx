@@ -4,11 +4,11 @@ import { useAccount, useWalletClient, useChainId, useDisconnect } from "wagmi";
 import { getAddress as toChecksum } from "viem";
 
 import ProfileMenu from "@/Wallet/ProfileMenu";
-import api from "@/lib/axios";
+import { authApi } from "@/lib/axios";   // ✅ use authApi for auth requests
 import { prepareSiweMessage } from "@/lib/siwe";
 
 export default function WalletButton({ variant = "navbar", onLogout, onLogin }) {
-  const { address, isConnected, status } = useAccount(); // connecting / connected / ...
+  const { address, isConnected, status } = useAccount();
   const { data: walletClient } = useWalletClient();
   const chainId = useChainId();
   const { disconnect } = useDisconnect();
@@ -17,11 +17,11 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
   const [signing, setSigning] = useState(false);
   const [blocked, setBlocked] = useState(false);
 
-  // Prefetched SIWE nonce to speed up mobile
+  // Prefetched SIWE nonce
   const [prefetchedNonce, setPrefetchedNonce] = useState(null);
   const [prefetching, setPrefetching] = useState(false);
 
-  // Mobile variant for ProfileMenu only (no layout change)
+  // Detect mobile
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
@@ -31,26 +31,30 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Check cookie session (does NOT open wallet nor create nonce)
+  // Check cookie session
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const { data } = await api.get("/auth/me", { withCredentials: true });
+        const { data } = await authApi.get("/auth/me");
         if (mounted) setAuthed(Boolean(data?.authenticated));
       } catch {
         if (mounted) setAuthed(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // Cross-tab sync (login/logout)
+  // Cross-tab sync
   useEffect(() => {
     const onLocalLogout = () => {
       setAuthed(false);
       setPrefetchedNonce(null);
-      try { disconnect(); } catch {}
+      try {
+        disconnect();
+      } catch {}
     };
     const onLocalLogin = () => setAuthed(true);
 
@@ -84,20 +88,18 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     };
   }, [disconnect]);
 
-  // ----------------- Gate SIWE to user-initiated connect -----------------
+  // ----------------- SIWE -----------------
   const [shouldRunSiwe, setShouldRunSiwe] = useState(false);
   const lastStatusRef = useRef(status);
   const lastIsConnectedRef = useRef(isConnected);
 
-  // Prefetch nonce as soon as the user starts connecting (mobile win)
   const prefetchNonce = async () => {
     if (prefetching || prefetchedNonce) return;
     try {
       setPrefetching(true);
-      const { data } = await api.get("/auth/nonce", { withCredentials: true });
+      const { data } = await authApi.get("/auth/nonce");
       if (data?.nonce) setPrefetchedNonce(data.nonce);
     } catch {
-      // no-op; we'll fetch again inside SIWE if needed
     } finally {
       setPrefetching(false);
     }
@@ -113,13 +115,10 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       (prevStatus === "connecting" && status === "connected") ||
       (!prevIsConn && isConnected);
 
-    // When user begins connecting, prefetch nonce in parallel (speed boost on mobile)
     if (status === "connecting") prefetchNonce();
-
     if (userInitiated) setShouldRunSiwe(true);
   }, [status, isConnected]);
 
-  // Run SIWE once wallet is connected & client ready
   useEffect(() => {
     const run = async () => {
       if (!shouldRunSiwe) return;
@@ -128,10 +127,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       try {
         setSigning(true);
 
-        // Use prefetched nonce if available; otherwise fetch now
         let nonce = prefetchedNonce;
         if (!nonce) {
-          const { data } = await api.get("/auth/nonce", { withCredentials: true });
+          const { data } = await authApi.get("/auth/nonce");
           nonce = data?.nonce;
         }
 
@@ -146,18 +144,13 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
         });
 
         const signature = await walletClient.signMessage({ account: address, message });
-        const res = await api.post(
-          "/auth/verify",
-          { message, signature },
-          { withCredentials: true }
-        );
+        const res = await authApi.post("/auth/verify", { message, signature });
 
         if (res.data?.ok) {
           setAuthed(true);
           setBlocked(false);
           setPrefetchedNonce(null);
 
-          // broadcast login so other tabs update
           window.dispatchEvent(new CustomEvent("hb-login"));
           if ("BroadcastChannel" in window) {
             new BroadcastChannel("hb-auth").postMessage({ type: "login", t: Date.now() });
@@ -180,15 +173,13 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     run();
   }, [shouldRunSiwe, isConnected, walletClient, address, chainId, authed, signing, prefetchedNonce, onLogin]);
 
-  // If authed=true but wallet disconnected elsewhere, fall back to Connect
   useEffect(() => {
     if (authed && !isConnected) setAuthed(false);
   }, [authed, isConnected]);
 
-  // Logout
   const handleLogout = async () => {
     try {
-      await api.post("/auth/logout", {}, { withCredentials: true });
+      await authApi.post("/auth/logout");
     } catch (err) {
       console.error("Logout error:", err);
     }
@@ -206,17 +197,10 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     if (typeof onLogout === "function") onLogout();
   };
 
-  // ---------------- UI (layout preserved) ----------------
-  // Until SIWE succeeds, keep showing the standard Connect button.
   if (!authed || !isConnected) {
     if (blocked && !signing) setBlocked(false);
     return <ConnectButton chainStatus="icon" showBalance={false} />;
   }
 
-  return (
-    <ProfileMenu
-      onLogout={handleLogout}
-      variant={isMobile ? "mobile" : variant}
-    />
-  );
+  return <ProfileMenu onLogout={handleLogout} variant={isMobile ? "mobile" : variant} />;
 }
