@@ -1,14 +1,17 @@
+// src/lib/axios.ts (or .js)
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_BASE_PATH, // Backend URL
-  withCredentials: true, // include cookies
+const base =
+  (import.meta.env.VITE_BASE_PATH && import.meta.env.VITE_BASE_PATH.trim()) || "/api";
+
+export const api = axios.create({
+  baseURL: base.replace(/\/+$/, ""),   // remove trailing slash
+  withCredentials: true,
 });
 
-// Chat helpers
-export const getSessions = () => api.get("/api/sessions");
-export const getMessages = (sessionId) => api.get(`/api/${encodeURIComponent(sessionId)}`);
-export const sendMessage = (sessionId, messages) =>
-  api.post("/api/chat", { sessionId, messages });
+// Helpers — NOTE: no '/api' here anymore
+export const getSessions   = () => api.get("/sessions");
+export const getMessages   = (sessionId) => api.get(`/${encodeURIComponent(sessionId)}`);
+export const sendMessage   = (sessionId, messages) => api.post("/chat", { sessionId, messages });
 
 export default api;
