@@ -12,18 +12,22 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // ✅ Allow only your production domain
-const allowedOrigins = [process.env.FRONTEND_URL].filter(Boolean);
+const allowedOrigins = [
+  process.env.FRONTEND_URL1,
+  process.env.FRONTEND_URL2,
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // allow Postman/curl tools
+      if (!origin) return cb(null, true);
       if (allowedOrigins.includes(origin)) return cb(null, true);
       return cb(new Error(`Not allowed by CORS: ${origin}`), false);
     },
     credentials: true,
   })
 );
+
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
