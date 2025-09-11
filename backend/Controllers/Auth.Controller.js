@@ -49,18 +49,29 @@ export const verifySiwe = async (req, res) => {
     const siwe = new SiweMessage(message);
 
     console.log("➡️ SIWE domain (from message):", siwe.domain);
-    console.log("➡️ Expected frontend domain:", process.env.FRONTEND_DOMAIN);
 
+    // ✅ Allowed domains from env (both www + non-www)
+    const allowedDomains = [
+      process.env.FRONTEND_URL1?.replace("https://", ""),
+      process.env.FRONTEND_URL2?.replace("https://", ""),
+    ].filter(Boolean);
+
+    if (!allowedDomains.includes(siwe.domain)) {
+      console.error("❌ [verifySiwe] Domain mismatch:", siwe.domain);
+      return res.status(401).json({ error: "Invalid domain" });
+    }
+
+    // ✅ Verify SIWE with the domain user actually signed
     const { data, success, error } = await siwe.verify({
       signature,
       nonce,
-      domain: process.env.FRONTEND_DOMAIN, // ✅ must match frontend host (e.g. localhost:5173 or hashbrain.ai)
+      domain: siwe.domain,
       time: new Date().toISOString(),
     });
 
     if (!success) {
       console.error("❌ [verifySiwe] failed:", error);
-      return res.status(401).json({ error: "Invalid signature or domain mismatch" });
+      return res.status(401).json({ error: "Invalid signature" });
     }
 
     const address = data.address.toLowerCase();
@@ -80,7 +91,7 @@ export const verifySiwe = async (req, res) => {
     );
 
     setCookie(res, COOKIE_NAME, session, 7 * 24 * 60 * 60 * 1000);
-    clearCookie(res, "siwe_nonce"); // ✅ clear nonce on successful login
+    clearCookie(res, "siwe_nonce");
     clearAllVariants(res, "siwe_nonce");
 
     return res.json({ ok: true, address, userId: user._id });
@@ -89,6 +100,7 @@ export const verifySiwe = async (req, res) => {
     res.status(401).json({ error: "Verification failed" });
   }
 };
+
 
 /**
  * GET /auth/me
