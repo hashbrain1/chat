@@ -22,7 +22,7 @@ const tiers = [
     id: "plus",
     name: "Plus",
     price: "$3",
-    cadence: "month",
+    cadence: "month (Hold 100 Hash = Free plus subscription)",
     cta: "Get Plus",
     highlight: true,
     features: [
@@ -39,8 +39,8 @@ const tiers = [
   {
     id: "pro",
     name: "Pro",
-    price: "$199",
-    cadence: "month",
+    price: "$33",
+    cadence: "month (Hold 1000 Hash = Free pro subscription)",
     cta: "Get Pro",
     highlight: false,
     features: [
@@ -88,7 +88,7 @@ export default function Upgrade() {
             Back to Chat
           </Link>
         </div>
-
+{/* 
         <div className="flex gap-2 mb-8">
           <button className="px-3 py-1 rounded-full bg-white text-black text-sm font-semibold">
             Personal
@@ -96,7 +96,7 @@ export default function Upgrade() {
           <button className="px-3 py-1 rounded-full bg-white/10 text-white text-sm">
             Business
           </button>
-        </div>
+        </div> */}
 
         <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
           {tiers.map((t) => (
