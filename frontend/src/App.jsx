@@ -9,6 +9,8 @@ import WalletProvider from "./Wallet/WalletProvider";
 import WalletButton from "./Wallet/WalletButton";
 import Upgrade from "./Components/Upgrade";
 import Whitepaper from "./Pages/Whitepaper";
+import PaymentSuccess from "./Pages/PaymentSuccess";
+import PaymentCancel from "./Pages/PaymentCancel";
 
 const App = () => {
   const router = createBrowserRouter([
@@ -39,6 +41,14 @@ const App = () => {
          {
           path: "/whitepaper",
           element: <Whitepaper />,
+        },
+        {
+          path: "/upgrade/success",
+          element: <PaymentSuccess />,
+        },
+        {
+          path: "/upgrade/cancel",
+          element: <PaymentCancel />,
         },
       ],
     },

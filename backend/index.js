@@ -4,6 +4,7 @@ import express from "express";
 import { connectDB } from "./Utils/db.js";
 import chatRouter from "./Routes/Chat.Routes.js";
 import authRouter from "./Routes/Auth.Routes.js";
+import paymentRouter from "./Routes/Payment.Routes.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.set("trust proxy", 1);
 // Routes
 app.use("/auth", authRouter);
 app.use("/api", chatRouter);
+app.use("/payments", paymentRouter);
 
 const startServer = async () => {
   try {
