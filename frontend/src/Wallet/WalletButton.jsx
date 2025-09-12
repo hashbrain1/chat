@@ -4,7 +4,7 @@ import { useAccount, useWalletClient, useChainId, useDisconnect } from "wagmi";
 import { getAddress as toChecksum } from "viem";
 
 import ProfileMenu from "@/Wallet/ProfileMenu";
-import { authApi } from "@/lib/axios";   // ✅ use authApi for auth requests
+import { authApi } from "@/lib/axios";
 import { prepareSiweMessage } from "@/lib/siwe";
 
 export default function WalletButton({ variant = "navbar", onLogout, onLogin }) {
@@ -15,95 +15,23 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
 
   const [authed, setAuthed] = useState(false);
   const [signing, setSigning] = useState(false);
-  const [blocked, setBlocked] = useState(false);
 
-  // Prefetched SIWE nonce
-  const [prefetchedNonce, setPrefetchedNonce] = useState(null);
-  const [prefetching, setPrefetching] = useState(false);
-
-  // Detect mobile
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 768 : false
-  );
+  // ✅ Check backend cookie session on mount
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  // Check cookie session
-  useEffect(() => {
-    let mounted = true;
     (async () => {
       try {
         const { data } = await authApi.get("/auth/me");
-        if (mounted) setAuthed(Boolean(data?.authenticated));
+        setAuthed(Boolean(data?.authenticated));
       } catch {
-        if (mounted) setAuthed(false);
+        setAuthed(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
   }, []);
-
-  // Cross-tab sync
-  useEffect(() => {
-    const onLocalLogout = () => {
-      setAuthed(false);
-      setPrefetchedNonce(null);
-      try {
-        disconnect();
-      } catch {}
-    };
-    const onLocalLogin = () => setAuthed(true);
-
-    window.addEventListener("hb-logout", onLocalLogout);
-    window.addEventListener("hb-login", onLocalLogin);
-
-    let bc;
-    if ("BroadcastChannel" in window) {
-      bc = new BroadcastChannel("hb-auth");
-      bc.onmessage = (evt) => {
-        if (evt?.data?.type === "logout") onLocalLogout();
-        if (evt?.data?.type === "login") onLocalLogin();
-      };
-    }
-    const onStorage = (e) => {
-      if (e.key === "hb-auth-evt" && e.newValue) {
-        try {
-          const p = JSON.parse(e.newValue);
-          if (p?.type === "logout") onLocalLogout();
-          if (p?.type === "login") onLocalLogin();
-        } catch {}
-      }
-    };
-    window.addEventListener("storage", onStorage);
-
-    return () => {
-      window.removeEventListener("hb-logout", onLocalLogout);
-      window.removeEventListener("hb-login", onLocalLogin);
-      window.removeEventListener("storage", onStorage);
-      if (bc) bc.close();
-    };
-  }, [disconnect]);
 
   // ----------------- SIWE -----------------
   const [shouldRunSiwe, setShouldRunSiwe] = useState(false);
   const lastStatusRef = useRef(status);
   const lastIsConnectedRef = useRef(isConnected);
-
-  const prefetchNonce = async () => {
-    if (prefetching || prefetchedNonce) return;
-    try {
-      setPrefetching(true);
-      const { data } = await authApi.get("/auth/nonce");
-      if (data?.nonce) setPrefetchedNonce(data.nonce);
-    } catch {
-    } finally {
-      setPrefetching(false);
-    }
-  };
 
   useEffect(() => {
     const prevStatus = lastStatusRef.current;
@@ -115,8 +43,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       (prevStatus === "connecting" && status === "connected") ||
       (!prevIsConn && isConnected);
 
-    if (status === "connecting") prefetchNonce();
-    if (userInitiated) setShouldRunSiwe(true);
+    if (userInitiated) setTimeout(() => setShouldRunSiwe(true), 300);
   }, [status, isConnected]);
 
   useEffect(() => {
@@ -127,11 +54,8 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       try {
         setSigning(true);
 
-        let nonce = prefetchedNonce;
-        if (!nonce) {
-          const { data } = await authApi.get("/auth/nonce");
-          nonce = data?.nonce;
-        }
+        const { data: nonceRes } = await authApi.get("/auth/nonce");
+        const nonce = nonceRes?.nonce;
 
         const message = prepareSiweMessage({
           domain: window.location.host,
@@ -148,15 +72,6 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
 
         if (res.data?.ok) {
           setAuthed(true);
-          setBlocked(false);
-          setPrefetchedNonce(null);
-
-          window.dispatchEvent(new CustomEvent("hb-login"));
-          if ("BroadcastChannel" in window) {
-            new BroadcastChannel("hb-auth").postMessage({ type: "login", t: Date.now() });
-          }
-          localStorage.setItem("hb-auth-evt", JSON.stringify({ type: "login", t: Date.now() }));
-
           if (typeof onLogin === "function") onLogin();
         } else {
           setAuthed(false);
@@ -164,43 +79,42 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       } catch (err) {
         console.error("❌ SIWE failed:", err);
         setAuthed(false);
-        setBlocked(true);
       } finally {
         setSigning(false);
         setShouldRunSiwe(false);
       }
     };
     run();
-  }, [shouldRunSiwe, isConnected, walletClient, address, chainId, authed, signing, prefetchedNonce, onLogin]);
+  }, [shouldRunSiwe, isConnected, walletClient, address, chainId, authed, signing, onLogin]);
 
-  useEffect(() => {
-    if (authed && !isConnected) setAuthed(false);
-  }, [authed, isConnected]);
-
+  // ✅ Logout clears backend cookie, wagmi state, and WC session
   const handleLogout = async () => {
     try {
       await authApi.post("/auth/logout");
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
+    } catch {}
     setAuthed(false);
-    setBlocked(false);
-    setPrefetchedNonce(null);
     disconnect();
 
-    window.dispatchEvent(new CustomEvent("hb-logout"));
-    if ("BroadcastChannel" in window) {
-      new BroadcastChannel("hb-auth").postMessage({ type: "logout", t: Date.now() });
+    // Clear WalletConnect/RainbowKit sessions so Trust Wallet won’t reconnect silently
+    try {
+      localStorage.removeItem("wagmi.store"); // wagmi v2 state
+      localStorage.removeItem("walletconnect"); // WC v1
+      Object.keys(localStorage).forEach((k) => {
+        if (k.startsWith("wc@") || k.includes("walletconnect")) {
+          localStorage.removeItem(k);
+        }
+      });
+    } catch (err) {
+      console.warn("Storage cleanup failed:", err);
     }
-    localStorage.setItem("hb-auth-evt", JSON.stringify({ type: "logout", t: Date.now() }));
 
     if (typeof onLogout === "function") onLogout();
   };
 
-  if (!authed || !isConnected) {
-    if (blocked && !signing) setBlocked(false);
-    return <ConnectButton chainStatus="icon" showBalance={false} />;
+  // ✅ Always prioritize cookie session
+  if (authed) {
+    return <ProfileMenu onLogout={handleLogout} variant={variant} />;
   }
 
-  return <ProfileMenu onLogout={handleLogout} variant={isMobile ? "mobile" : variant} />;
+  return <ConnectButton chainStatus="icon" showBalance={false} />;
 }
