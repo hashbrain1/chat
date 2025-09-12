@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getMessages, sendMessage } from "../lib/axios";
 import { Link } from "react-router-dom";
+import { Gem } from "lucide-react";
 
 const ChatWindow = ({
   sessionId,
