@@ -22,10 +22,11 @@ const tiers = [
     id: "plus",
     name: "Plus",
     price: "$3",
-    cadence: "month (Hold 100 Hash = Free plus subscription)",
+    cadence: "month",
     cta: "Get Plus",
     highlight: true,
     features: [
+      "Hold 100 Hash = Free plus subscription",
       "Access to hash 2.0",
       "Unlimited messaging",
       "Hash projects and task",
@@ -40,10 +41,11 @@ const tiers = [
     id: "pro",
     name: "Pro",
     price: "$33",
-    cadence: "month (Hold 1000 Hash = Free pro subscription)",
+    cadence: "month",
     cta: "Get Pro",
     highlight: false,
     features: [
+      "Hold 1000 Hash = Free pro subscription",
       "Access to hash 2.0",
       "Unlimited messaging",
       "Hash projects and task",
@@ -88,7 +90,7 @@ export default function Upgrade() {
             Back to Chat
           </Link>
         </div>
-{/* 
+        {/* 
         <div className="flex gap-2 mb-8">
           <button className="px-3 py-1 rounded-full bg-white text-black text-sm font-semibold">
             Personal
