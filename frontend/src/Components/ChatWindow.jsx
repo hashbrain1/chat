@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import { getMessages, sendMessage } from "../lib/axios";
 import { Link } from "react-router-dom";
 
-const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesChange }) => {
+const ChatWindow = ({
+  sessionId,
+  setCurrentSessionId,
+  setSessions,
+  onMessagesChange,
+}) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -81,7 +86,10 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
 
       if (!sessionId && data.sessionId) {
         setCurrentSessionId(data.sessionId);
-        setSessions((prev) => [{ sessionId: data.sessionId, title: "New Chat" }, ...prev]);
+        setSessions((prev) => [
+          { sessionId: data.sessionId, title: "New Chat" },
+          ...prev,
+        ]);
       }
 
       const withResponse = [...updatedMessages];
@@ -108,15 +116,20 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
       {/* …unchanged UI… */}
       <div className="sticky top-0 z-20">
         <div className="px-2 sm:px-4 pt-3 bg-black/80 backdrop-blur">
-          <div className="w-full max-w-full sm:max-w-3xl mx-auto">
-            <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3
+          <div className="w-fit max-w-full sm:max-w-3xl mx-auto">
+            <div
+              className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3
                             flex flex-col sm:flex-row items-stretch sm:items-center
-                            justify-between gap-3">
+                            justify-between gap-3"
+            >
               <Link
                 to="/upgrade"
-                className="rounded-full px-4 py-2 bg-white text-black hover:bg-white/90
-                           text-sm font-semibold text-center w-full sm:w-auto"
+                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 
+             rounded-full bg-purple-600 hover:bg-purple-500 
+             text-white font-semibold text-sm sm:text-base 
+             transition-colors"
               >
+                <Gem className="w-4 h-4 sm:w-5 sm:h-5" />
                 Upgrade
               </Link>
             </div>
@@ -130,15 +143,19 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
           {messages.map((m, i) => (
             <div key={i}>
               <div className="flex justify-end">
-                <div className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl
-                                max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow">
+                <div
+                  className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl
+                                max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow"
+                >
                   {m.message}
                 </div>
               </div>
               {m.response && (
                 <div className="flex justify-start mt-2">
-                  <div className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl
-                                  max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow">
+                  <div
+                    className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl
+                                  max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow"
+                  >
                     {m.response}
                   </div>
                 </div>
@@ -187,7 +204,11 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
                 strokeWidth="2"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                />
               </svg>
             </button>
           </div>
