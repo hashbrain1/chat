@@ -112,10 +112,10 @@ const ChatWindow = ({ sessionId, setCurrentSessionId, setSessions, onMessagesCha
             <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3
                             flex flex-col sm:flex-row items-stretch sm:items-center
                             justify-between gap-3">
-              <div className="text-sm sm:text-[15px] leading-snug">
+              {/* <div className="text-sm sm:text-[15px] leading-snug">
                 <span className="font-semibold">Free plan</span> — limited messages & features.
                 Unlock longer context, faster responses, and more.
-              </div>
+              </div> */}
               <Link
                 to="/upgrade"
                 className="rounded-full px-4 py-2 bg-white text-black hover:bg-white/90
