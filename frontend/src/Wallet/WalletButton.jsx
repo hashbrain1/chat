@@ -17,10 +17,11 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
   const [signing, setSigning] = useState(false);
   const [blocked, setBlocked] = useState(false);
 
+  // Prefetched SIWE nonce
   const [prefetchedNonce, setPrefetchedNonce] = useState(null);
   const [prefetching, setPrefetching] = useState(false);
 
-  // Mobile detection
+  // Detect mobile
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
@@ -41,7 +42,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
         if (mounted) setAuthed(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Cross-tab sync
@@ -49,7 +52,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     const onLocalLogout = () => {
       setAuthed(false);
       setPrefetchedNonce(null);
-      try { disconnect(); } catch {}
+      try {
+        disconnect();
+      } catch {}
     };
     const onLocalLogin = () => setAuthed(true);
 
@@ -122,42 +127,26 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       try {
         setSigning(true);
 
-        // Always ensure a fresh nonce
         let nonce = prefetchedNonce;
         if (!nonce) {
           const { data } = await authApi.get("/auth/nonce");
           nonce = data?.nonce;
         }
 
-        const buildMessage = (nonceVal) =>
-          prepareSiweMessage({
-            domain: window.location.host,
-            address: toChecksum(address),
-            statement: "Sign in to Hash Brain using your wallet.",
-            uri: window.location.origin,
-            version: "1",
-            chainId: chainId || 1,
-            nonce: nonceVal,
-          });
+        const message = prepareSiweMessage({
+          domain: window.location.host,
+          address: toChecksum(address),
+          statement: "Sign in to Hash Brain using your wallet.",
+          uri: window.location.origin,
+          version: "1",
+          chainId: chainId || 1,
+          nonce,
+        });
 
-        // First attempt
-        let message = buildMessage(nonce);
-        let signature = await walletClient.signMessage({ account: address, message });
+        const signature = await walletClient.signMessage({ account: address, message });
+        const res = await authApi.post("/auth/verify", { message, signature });
 
-        let verified = false;
-        try {
-          const res = await authApi.post("/auth/verify", { message, signature });
-          verified = res.data?.ok;
-        } catch (err) {
-          console.warn("First SIWE verify failed, retrying with new nonce...");
-          const { data } = await authApi.get("/auth/nonce");
-          message = buildMessage(data.nonce);
-          signature = await walletClient.signMessage({ account: address, message });
-          const res = await authApi.post("/auth/verify", { message, signature });
-          verified = res.data?.ok;
-        }
-
-        if (verified) {
+        if (res.data?.ok) {
           setAuthed(true);
           setBlocked(false);
           setPrefetchedNonce(null);
@@ -173,7 +162,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
           setAuthed(false);
         }
       } catch (err) {
-        console.error("❌ SIWE failed after retry:", err);
+        console.error("❌ SIWE failed:", err);
         setAuthed(false);
         setBlocked(true);
       } finally {
