@@ -17,14 +17,13 @@ import {
 } from "wagmi/chains";
 import "@rainbow-me/rainbowkit/styles.css";
 
-// ✅ Enable autoConnect and persist WC sessions
+// Build wagmi config with RainbowKit helper (no providers/public in v2)
 const config = getDefaultConfig({
   appName: "Hash Brain",
-  projectId: import.meta.env.VITE_WC_PROJECT_ID || "",
+  projectId: import.meta.env.VITE_WC_PROJECT_ID || "", // WalletConnect projectId
   chains: [mainnet, polygon, arbitrum, optimism, base, bsc, sepolia],
   ssr: false,
-  autoConnect: true, // ✅ restore wallet silently
-  storage: typeof window !== "undefined" ? window.localStorage : undefined, // ✅ persist WC session
+  autoConnect: false, // ✅ DO NOT auto-reconnect on load
 });
 
 const queryClient = new QueryClient();

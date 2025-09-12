@@ -9,7 +9,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
 
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false); // ✅ new state
 
   const menuRef = useRef(null);
   const btnRef = useRef(null);
@@ -59,20 +59,11 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
   const avatar =
     "inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-black text-xs font-bold";
 
-  // ✅ Logout handler with localStorage cleanup
+  // ✅ Logout handler with loading
   const handleClickLogout = async () => {
     setLoggingOut(true);
     try {
       if (onLogout) await onLogout();
-
-      // Clear WalletConnect session so Trust Wallet doesn’t reconnect silently
-      localStorage.removeItem("wagmi.store"); // wagmi v2 state
-      localStorage.removeItem("walletconnect"); // WC v1 (legacy)
-      Object.keys(localStorage).forEach((k) => {
-        if (k.startsWith("wc@") || k.includes("walletconnect")) {
-          localStorage.removeItem(k);
-        }
-      });
     } finally {
       setLoggingOut(false);
       setOpen(false);
@@ -94,15 +85,11 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
         aria-haspopup="menu"
       >
         <span className="flex items-center gap-2 min-w-0">
-          <span className={avatar}>
-            {address?.slice(2, 4)?.toUpperCase() || "W"}
-          </span>
+          <span className={avatar}>{address?.slice(2, 4)?.toUpperCase() || "W"}</span>
           <span className="text-sm truncate">Profile</span>
         </span>
         <svg
-          className={`h-4 w-4 shrink-0 transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
+          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
           viewBox="0 0 20 20"
           fill="currentColor"
         >
@@ -125,9 +112,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
                 : "px-3 pt-3 pb-3 border-b border-gray-200"
             }
           >
-            <div className="text-xs uppercase tracking-wide opacity-70 mb-1">
-              Wallet
-            </div>
+            <div className="text-xs uppercase tracking-wide opacity-70 mb-1">Wallet</div>
             <div className="flex items-center justify-between gap-2">
               <code className="text-sm break-words">{truncate(address)}</code>
               <div className="relative">
