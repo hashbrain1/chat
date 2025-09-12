@@ -4,7 +4,7 @@ import { useAccount, useWalletClient, useChainId, useDisconnect } from "wagmi";
 import { getAddress as toChecksum } from "viem";
 
 import ProfileMenu from "@/Wallet/ProfileMenu";
-import { authApi } from "@/lib/axios";   // ✅ use authApi for auth requests
+import { authApi } from "@/lib/axios";
 import { prepareSiweMessage } from "@/lib/siwe";
 
 export default function WalletButton({ variant = "navbar", onLogout, onLogin }) {
@@ -17,11 +17,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
   const [signing, setSigning] = useState(false);
   const [blocked, setBlocked] = useState(false);
 
-  // Prefetched SIWE nonce
   const [prefetchedNonce, setPrefetchedNonce] = useState(null);
   const [prefetching, setPrefetching] = useState(false);
 
-  // Detect mobile
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
@@ -31,20 +29,21 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Check cookie session
+  // ✅ Check cookie session on mount
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    const checkSession = async () => {
       try {
-        const { data } = await authApi.get("/auth/me");
-        if (mounted) setAuthed(Boolean(data?.authenticated));
+        const res = await authApi.get("/auth/me");
+        if (res.data?.authenticated) {
+          setAuthed(true);
+        } else {
+          setAuthed(false);
+        }
       } catch {
-        if (mounted) setAuthed(false);
+        setAuthed(false);
       }
-    })();
-    return () => {
-      mounted = false;
     };
+    checkSession();
   }, []);
 
   // Cross-tab sync
@@ -52,9 +51,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     const onLocalLogout = () => {
       setAuthed(false);
       setPrefetchedNonce(null);
-      try {
-        disconnect();
-      } catch {}
+      try { disconnect(); } catch {}
     };
     const onLocalLogin = () => setAuthed(true);
 
@@ -116,7 +113,10 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       (!prevIsConn && isConnected);
 
     if (status === "connecting") prefetchNonce();
-    if (userInitiated) setShouldRunSiwe(true);
+    if (userInitiated) {
+      // debounce SIWE run to avoid Trust Wallet race condition
+      setTimeout(() => setShouldRunSiwe(true), 400);
+    }
   }, [status, isConnected]);
 
   useEffect(() => {
@@ -127,26 +127,40 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       try {
         setSigning(true);
 
+        // Always ensure a fresh nonce
         let nonce = prefetchedNonce;
         if (!nonce) {
           const { data } = await authApi.get("/auth/nonce");
           nonce = data?.nonce;
         }
 
-        const message = prepareSiweMessage({
-          domain: window.location.host,
-          address: toChecksum(address),
-          statement: "Sign in to Hash Brain using your wallet.",
-          uri: window.location.origin,
-          version: "1",
-          chainId: chainId || 1,
-          nonce,
-        });
+        const buildMessage = (nonceVal) =>
+          prepareSiweMessage({
+            domain: window.location.host,
+            address: toChecksum(address),
+            statement: "Sign in to Hash Brain using your wallet.",
+            uri: window.location.origin,
+            version: "1",
+            chainId: chainId || 1,
+            nonce: nonceVal,
+          });
 
-        const signature = await walletClient.signMessage({ account: address, message });
-        const res = await authApi.post("/auth/verify", { message, signature });
+        let message = buildMessage(nonce);
+        let signature = await walletClient.signMessage({ account: address, message });
 
-        if (res.data?.ok) {
+        let verified = false;
+        try {
+          const res = await authApi.post("/auth/verify", { message, signature });
+          verified = res.data?.ok;
+        } catch {
+          const { data } = await authApi.get("/auth/nonce");
+          message = buildMessage(data.nonce);
+          signature = await walletClient.signMessage({ account: address, message });
+          const res = await authApi.post("/auth/verify", { message, signature });
+          verified = res.data?.ok;
+        }
+
+        if (verified) {
           setAuthed(true);
           setBlocked(false);
           setPrefetchedNonce(null);
@@ -162,7 +176,6 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
           setAuthed(false);
         }
       } catch (err) {
-        console.error("❌ SIWE failed:", err);
         setAuthed(false);
         setBlocked(true);
       } finally {
@@ -180,9 +193,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
   const handleLogout = async () => {
     try {
       await authApi.post("/auth/logout");
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
+    } catch {}
     setAuthed(false);
     setBlocked(false);
     setPrefetchedNonce(null);
