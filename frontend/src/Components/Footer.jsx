@@ -79,7 +79,7 @@ const Footer = () => {
               </Link>
             </li>
             <li>
-              <Link to={"/tokenomics"} className="hover:text-green-400">
+              <Link to={"/tokenomics"} target="_blank"  className="hover:text-green-400">
                 Tokenomics
               </Link>
             </li>
