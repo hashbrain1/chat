@@ -9,7 +9,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
 
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false); // ✅ new state
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const menuRef = useRef(null);
   const btnRef = useRef(null);
@@ -59,7 +59,6 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
   const avatar =
     "inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-black text-xs font-bold";
 
-  // ✅ Logout handler with loading
   const handleClickLogout = async () => {
     setLoggingOut(true);
     try {
@@ -72,7 +71,6 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
 
   return (
     <div className={isSidebar ? "w-full min-w-0" : "relative"}>
-      {/* Profile button */}
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
@@ -97,14 +95,12 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
         </svg>
       </button>
 
-      {/* Submenu */}
       {open && (
         <div
           ref={menuRef}
           className={isSidebar ? cardSidebar : isMobile ? cardMobile : cardNavbar}
           role="menu"
         >
-          {/* Address */}
           <div
             className={
               isSidebar
@@ -141,7 +137,6 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
             </div>
           </div>
 
-          {/* Status */}
           <div className={row}>
             <span className="text-sm opacity-80">Status</span>
             <span className="inline-flex items-center gap-1 text-sm font-medium">
@@ -150,7 +145,6 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
             </span>
           </div>
 
-          {/* Logout */}
           <div className="px-3 pt-1 pb-5">
             <button
               onClick={handleClickLogout}

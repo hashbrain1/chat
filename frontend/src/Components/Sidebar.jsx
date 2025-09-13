@@ -8,12 +8,13 @@ const Sidebar = ({
   onSelectSession,
   currentSessionId,
   hasMessages,
-  onLogout,   // ✅ new
-  onLogin,    // ✅ new
+  onLogout,
+  onLogin,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const sidebarRef = useRef(null);
 
+  // ✅ Auto open on desktop, closed on mobile
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) setIsOpen(true);
@@ -24,6 +25,7 @@ const Sidebar = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // ✅ Close on outside click (desktop only)
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (
@@ -39,6 +41,51 @@ const Sidebar = ({
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [isOpen]);
 
+  // ✅ Sync login/logout across tabs instantly
+  useEffect(() => {
+    const handleLogout = () => {
+      setSessions([]);
+      onSelectSession(null);
+    };
+
+    const handleLogin = () => {
+      if (typeof onLogin === "function") onLogin();
+    };
+
+    // same-tab events
+    window.addEventListener("hb-logout", handleLogout);
+    window.addEventListener("hb-login", handleLogin);
+
+    // BroadcastChannel cross-tab
+    let bc;
+    if ("BroadcastChannel" in window) {
+      bc = new BroadcastChannel("hb-auth");
+      bc.onmessage = (evt) => {
+        if (evt?.data?.type === "logout") handleLogout();
+        if (evt?.data?.type === "login") handleLogin();
+      };
+    }
+
+    // localStorage cross-tab
+    const onStorage = (e) => {
+      if (e.key === "hb-auth-evt" && e.newValue) {
+        try {
+          const p = JSON.parse(e.newValue);
+          if (p?.type === "logout") handleLogout();
+          if (p?.type === "login") handleLogin();
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("hb-logout", handleLogout);
+      window.removeEventListener("hb-login", handleLogin);
+      window.removeEventListener("storage", onStorage);
+      if (bc) bc.close();
+    };
+  }, [setSessions, onSelectSession, onLogin]);
+
   const handleNewChat = async () => {
     if (!hasMessages) return;
     const placeholder = { sessionId: null, title: "New Chat" };
@@ -49,6 +96,7 @@ const Sidebar = ({
 
   return (
     <>
+      {/* Open button (mobile only) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -60,6 +108,7 @@ const Sidebar = ({
         </button>
       )}
 
+      {/* Overlay on mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/40 md:hidden z-30"
@@ -67,6 +116,7 @@ const Sidebar = ({
         />
       )}
 
+      {/* Sidebar container */}
       <div
         ref={sidebarRef}
         className={`h-full bg-gray-900 text-white shadow-lg transition-all duration-300 ease-in-out
@@ -78,6 +128,7 @@ const Sidebar = ({
                     }
                     fixed md:static inset-y-0 left-0 z-40`}
       >
+        {/* Close button (mobile only) */}
         {isOpen && (
           <button
             onClick={() => setIsOpen(false)}

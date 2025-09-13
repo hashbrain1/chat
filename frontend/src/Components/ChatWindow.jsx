@@ -21,7 +21,7 @@ const ChatWindow = ({
     }
   }, [sessionId]);
 
-  // 🔔 Clear messages immediately on global/cross-tab logout
+  // ✅ Clear messages immediately on logout (any tab)
   useEffect(() => {
     const clearAll = () => {
       setMessages([]);
@@ -31,7 +31,7 @@ const ChatWindow = ({
     window.addEventListener("hb-logout", clearAll);
 
     let bc;
-    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+    if ("BroadcastChannel" in window) {
       bc = new BroadcastChannel("hb-auth");
       bc.onmessage = (evt) => {
         if (evt?.data?.type === "logout") clearAll();
@@ -114,21 +114,21 @@ const ChatWindow = ({
 
   return (
     <div className="flex flex-col h-full min-h-[100svh] bg-black/85 text-white">
-      {/* …unchanged UI… */}
+      {/* Top bar with Upgrade button */}
       <div className="sticky top-0 z-20">
         <div className="px-2 sm:px-4 pt-3 bg-black/80 backdrop-blur">
           <div className="w-fit max-w-full sm:max-w-3xl mx-auto">
             <div
               className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3
-                            flex flex-col sm:flex-row items-stretch sm:items-center
-                            justify-between gap-3"
+                          flex flex-col sm:flex-row items-stretch sm:items-center
+                          justify-between gap-3"
             >
               <Link
                 to="/upgrade"
                 className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 
-             rounded-full bg-purple-600 hover:bg-purple-500 
-             text-white font-semibold text-sm sm:text-base 
-             transition-colors"
+               rounded-full bg-purple-600 hover:bg-purple-500 
+               text-white font-semibold text-sm sm:text-base 
+               transition-colors"
               >
                 <Gem className="w-4 h-4 sm:w-5 sm:h-5" />
                 Upgrade
@@ -138,7 +138,7 @@ const ChatWindow = ({
         </div>
       </div>
 
-      {/* …rest of your UI unchanged… */}
+      {/* Chat messages */}
       <div className="flex-1 flex justify-center overflow-y-auto py-4 sm:py-6 pb-28 md:pb-6">
         <div className="w-full max-w-full sm:max-w-3xl px-2 sm:px-4 space-y-4">
           {messages.map((m, i) => (
@@ -146,7 +146,7 @@ const ChatWindow = ({
               <div className="flex justify-end">
                 <div
                   className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl
-                                max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow"
+                              max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow"
                 >
                   {m.message}
                 </div>
@@ -155,7 +155,7 @@ const ChatWindow = ({
                 <div className="flex justify-start mt-2">
                   <div
                     className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl
-                                  max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow"
+                                max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow"
                   >
                     {m.response}
                   </div>
@@ -174,6 +174,7 @@ const ChatWindow = ({
         </div>
       </div>
 
+      {/* Input box */}
       <div
         className="
           fixed inset-x-0 bottom-0 z-30
