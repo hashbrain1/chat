@@ -18,7 +18,7 @@ const About = () => {
             freedom from central control—making advanced knowledge accessible to
             everyone, everywhere.
           </p>
-          <Link to={"/whitepaper"} className="px-6 py-5 bg-green-500 hover:bg-green-600 text-black text-[12px] rounded-full w-fit font-normal">
+          <Link to={"/whitepaper"} target="_blank" className="px-4 py-5 bg-green-500 hover:bg-green-600 text-black text-[12px] rounded-full w-fit font-normal">
             About us
           </Link>
         </div>
