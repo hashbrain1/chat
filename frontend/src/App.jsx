@@ -6,11 +6,11 @@ import About from "./Pages/About";
 import ChatApp from "./Components/ChatApp";
 import ProductDescription from "./Pages/ProductDescription";
 import WalletProvider from "./Wallet/WalletProvider";
-import WalletButton from "./Wallet/WalletButton";
 import Upgrade from "./Components/Upgrade";
 import Whitepaper from "./Pages/Whitepaper";
 import PaymentSuccess from "./Pages/PaymentSuccess";
 import PaymentCancel from "./Pages/PaymentCancel";
+import Tokenomics from "./Pages/Tokenomics";
 
 const App = () => {
   const router = createBrowserRouter([
@@ -41,6 +41,10 @@ const App = () => {
          {
           path: "/whitepaper",
           element: <Whitepaper />,
+        },
+          {
+          path: "/tokenomics",
+          element: <Tokenomics />,
         },
         {
           path: "/upgrade/success",
