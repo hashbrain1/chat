@@ -1,17 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
-import { authApi } from "@/lib/axios";
 
 const truncate = (addr = "") =>
   addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
 
-export default function ProfileMenu({ variant = "navbar", onLogout, authed }) {
+export default function ProfileMenu({ variant = "navbar", onLogout }) {
   const { address, isConnected, status } = useAccount();
 
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [sessionValid, setSessionValid] = useState(authed);
+  const [loggingOut, setLoggingOut] = useState(false); // ✅ new state
 
   const menuRef = useRef(null);
   const btnRef = useRef(null);
@@ -42,60 +40,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout, authed }) {
     window.dispatchEvent(new CustomEvent("hb-profile-toggle"));
   }, [open]);
 
-  // ✅ Check cookie once on mount
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const { data } = await authApi.get("/auth/me");
-        if (mounted) setSessionValid(Boolean(data?.authenticated));
-      } catch {
-        if (mounted) setSessionValid(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // ✅ Sync login/logout across tabs instantly
-  useEffect(() => {
-    const onLocalLogout = () => setSessionValid(false);
-    const onLocalLogin = () => setSessionValid(true);
-
-    window.addEventListener("hb-logout", onLocalLogout);
-    window.addEventListener("hb-login", onLocalLogin);
-
-    let bc;
-    if ("BroadcastChannel" in window) {
-      bc = new BroadcastChannel("hb-auth");
-      bc.onmessage = (evt) => {
-        if (evt?.data?.type === "logout") onLocalLogout();
-        if (evt?.data?.type === "login") onLocalLogin();
-      };
-    }
-
-    const onStorage = (e) => {
-      if (e.key === "hb-auth-evt" && e.newValue) {
-        try {
-          const p = JSON.parse(e.newValue);
-          if (p?.type === "logout") onLocalLogout();
-          if (p?.type === "login") onLocalLogin();
-        } catch {}
-      }
-    };
-    window.addEventListener("storage", onStorage);
-
-    return () => {
-      window.removeEventListener("hb-logout", onLocalLogout);
-      window.removeEventListener("hb-login", onLocalLogin);
-      window.removeEventListener("storage", onStorage);
-      if (bc) bc.close();
-    };
-  }, []);
-
-  // ✅ Hide Profile if no wallet and no cookie session
-  if (!isConnected && !sessionValid) return null;
+  if (!isConnected) return null;
 
   const isSidebar = variant === "sidebar";
   const isMobile = variant === "mobile";
@@ -140,9 +85,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout, authed }) {
         aria-haspopup="menu"
       >
         <span className="flex items-center gap-2 min-w-0">
-          <span className={avatar}>
-            {address?.slice(2, 4)?.toUpperCase() || "W"}
-          </span>
+          <span className={avatar}>{address?.slice(2, 4)?.toUpperCase() || "W"}</span>
           <span className="text-sm truncate">Profile</span>
         </span>
         <svg
@@ -169,9 +112,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout, authed }) {
                 : "px-3 pt-3 pb-3 border-b border-gray-200"
             }
           >
-            <div className="text-xs uppercase tracking-wide opacity-70 mb-1">
-              Wallet
-            </div>
+            <div className="text-xs uppercase tracking-wide opacity-70 mb-1">Wallet</div>
             <div className="flex items-center justify-between gap-2">
               <code className="text-sm break-words">{truncate(address)}</code>
               <div className="relative">
@@ -205,7 +146,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout, authed }) {
             <span className="text-sm opacity-80">Status</span>
             <span className="inline-flex items-center gap-1 text-sm font-medium">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              {status === "connected" || sessionValid ? "Signed in" : "Connecting…"}
+              {status === "connected" ? "Signed in" : "Connecting…"}
             </span>
           </div>
 
