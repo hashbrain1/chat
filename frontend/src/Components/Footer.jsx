@@ -107,21 +107,6 @@ const Footer = () => {
           <ul className="space-y-2 text-sm">
             <li>
               <a href="#" className="hover:text-green-400">
-                Blog
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-green-400">
-                Newsletter
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-green-400">
-                Community
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-green-400">
                 Contact
               </a>
             </li>
