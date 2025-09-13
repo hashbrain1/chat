@@ -11,6 +11,7 @@ import Whitepaper from "./Pages/Whitepaper";
 import PaymentSuccess from "./Pages/PaymentSuccess";
 import PaymentCancel from "./Pages/PaymentCancel";
 import Tokenomics from "./Pages/Tokenomics";
+import Roadmap from "./Pages/Roadmap";
 
 const App = () => {
   const router = createBrowserRouter([
@@ -45,6 +46,10 @@ const App = () => {
           {
           path: "/tokenomics",
           element: <Tokenomics />,
+        },
+         {
+          path: "/roadmap",
+          element: <Roadmap />,
         },
         {
           path: "/upgrade/success",
