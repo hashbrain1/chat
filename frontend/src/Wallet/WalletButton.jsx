@@ -115,7 +115,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       (prevStatus === "connecting" && status === "connected") ||
       (!prevIsConn && isConnected);
 
-    // if (status === "connecting") prefetchNonce();
+    // ❌ Removed auto prefetch on "connecting"
     if (userInitiated) setShouldRunSiwe(true);
   }, [status, isConnected]);
 
