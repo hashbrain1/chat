@@ -74,7 +74,7 @@ const Footer = () => {
           <h3 className="text-white font-semibold mb-3">HASH BRAIN</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <Link to={"/whitepaper"} className="hover:text-green-400">
+              <Link to={"/whitepaper"} target="_blank" className="hover:text-green-400">
                 Whitepaper
               </Link>
             </li>
