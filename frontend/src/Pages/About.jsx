@@ -2,6 +2,7 @@ import React from "react";
 import InfoCard from "../Components/InfoCard";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/Components/ui/button";
+import { Link } from "react-router-dom";
 
 const About = () => {
   return (
@@ -17,9 +18,9 @@ const About = () => {
             freedom from central control—making advanced knowledge accessible to
             everyone, everywhere.
           </p>
-          <Button className="px-6 py-5 bg-green-500 hover:bg-green-600 text-black text-[12px] rounded-full w-fit font-normal">
+          <Link to={"/whitepaper"} className="px-6 py-5 bg-green-500 hover:bg-green-600 text-black text-[12px] rounded-full w-fit font-normal">
             About us
-          </Button>
+          </Link>
         </div>
       </InfoCard>
 
