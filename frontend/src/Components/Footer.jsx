@@ -15,14 +15,24 @@ const Footer = () => {
     <footer className="bg-[#272727] text-gray-300 py-10 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
         {/* Left Section */}
-        <div>
+        <div id="footer">
           <p className="text-sm mb-3">Managed by</p>
           <h2 className="text-2xl font-bold text-green-400">HASH BRAIN AI</h2>
           <div className="flex gap-4 mt-4 text-xl">
-            <Link to={"https://www.youtube.com/@HashBrainai"} target="_blank" className="hover:text-green-400">
+            <Link
+              to={"https://www.youtube.com/@HashBrainai"}
+              target="_blank"
+              className="hover:text-green-400"
+            >
               <FaYoutube />
             </Link>
-            <Link to={"https://x.com/Hashbrainai/status/1961703826077225297?t=Ad_ZVn4nMKMko012MHPjUg&s=19"} target="_blank" className="hover:text-green-400">
+            <Link
+              to={
+                "https://x.com/Hashbrainai/status/1961703826077225297?t=Ad_ZVn4nMKMko012MHPjUg&s=19"
+              }
+              target="_blank"
+              className="hover:text-green-400"
+            >
               <FaTwitter />
             </Link>
             <Link to={""} className="hover:text-green-400">
@@ -34,13 +44,22 @@ const Footer = () => {
             <Link to={""} className="hover:text-green-400">
               <FaGithub />
             </Link>
-            <Link to={"https://t.me/+wGZ8G1_XCx00ZGU1"} target="_blank" className="hover:text-green-400">
+            <Link
+              to={"https://t.me/+wGZ8G1_XCx00ZGU1"}
+              target="_blank"
+              className="hover:text-green-400"
+            >
               <FaTelegramPlane />
             </Link>
-             <Link to={"https://www.instagram.com/hashbrainai?igsh=MWtxcG9nYjAya3pvcQ=="} target="_blank" className="hover:text-green-400">
+            <Link
+              to={
+                "https://www.instagram.com/hashbrainai?igsh=MWtxcG9nYjAya3pvcQ=="
+              }
+              target="_blank"
+              className="hover:text-green-400"
+            >
               <FaInstagram />
             </Link>
-            
           </div>
           <p className="text-xs mt-4">
             © 2025 Hash Brain AI. All rights reserved.
@@ -52,9 +71,9 @@ const Footer = () => {
           <h3 className="text-white font-semibold mb-3">HASH BRAIN</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <a href="#" className="hover:text-green-400">
+              <Link to={"/whitepaper"} className="hover:text-green-400">
                 Whitepaper
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="hover:text-green-400">

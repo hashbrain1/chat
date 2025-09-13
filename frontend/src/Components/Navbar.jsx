@@ -106,7 +106,7 @@ const Navbar = ({ onLogout, onLogin }) => {
     { label: "Home", to: "/", type: "link" },
     { label: "Product", to: "/product", type: "link" },
     { label: "Docs", to: "/whitepaper", type: "link", newTab: true },
-    { label: "Ecosystem", href: "#", type: "a" },
+    { label: "Community", href: "/#footer", type: "a" },
   ];
 
   const handleMobileClick = () => setOpen(false);
