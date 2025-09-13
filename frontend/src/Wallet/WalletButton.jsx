@@ -4,7 +4,7 @@ import { useAccount, useWalletClient, useChainId, useDisconnect } from "wagmi";
 import { getAddress as toChecksum } from "viem";
 
 import ProfileMenu from "@/Wallet/ProfileMenu";
-import { authApi } from "@/lib/axios";   // ✅ use authApi for auth requests
+import { authApi } from "@/lib/axios";
 import { prepareSiweMessage } from "@/lib/siwe";
 
 export default function WalletButton({ variant = "navbar", onLogout, onLogin }) {
@@ -17,11 +17,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
   const [signing, setSigning] = useState(false);
   const [blocked, setBlocked] = useState(false);
 
-  // Prefetched SIWE nonce
   const [prefetchedNonce, setPrefetchedNonce] = useState(null);
   const [prefetching, setPrefetching] = useState(false);
 
-  // Detect mobile
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
@@ -31,7 +29,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Check cookie session
+  // ✅ Check cookie session on mount
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -115,7 +113,6 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       (prevStatus === "connecting" && status === "connected") ||
       (!prevIsConn && isConnected);
 
-    // ❌ removed auto prefetch on refresh
     if (userInitiated) setShouldRunSiwe(true);
   }, [status, isConnected]);
 
@@ -173,9 +170,11 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     run();
   }, [shouldRunSiwe, isConnected, walletClient, address, chainId, authed, signing, prefetchedNonce, onLogin]);
 
-  useEffect(() => {
-    if (authed && !isConnected) setAuthed(false);
-  }, [authed, isConnected]);
+  // ✅ Use cookie auth as the real source of truth
+  // Even if wagmi says !isConnected, show Profile if authed is true
+  if (authed) {
+    return <ProfileMenu onLogout={handleLogout} variant={isMobile ? "mobile" : variant} />;
+  }
 
   const handleLogout = async () => {
     try {
@@ -197,29 +196,24 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     if (typeof onLogout === "function") onLogout();
   };
 
-  if (!authed || !isConnected) {
+  // Show Connect button if no valid session
+  if (!authed) {
     if (blocked && !signing) setBlocked(false);
-
-    // ✅ Custom connect button: prefetch nonce only when user clicks
     return (
       <ConnectButton.Custom>
-        {({ openConnectModal, mounted }) => {
-          return (
-            <button
-              disabled={!mounted}
-              onClick={() => {
-                prefetchNonce();       // 🎯 only here → after click
-                openConnectModal();    // open RainbowKit modal
-              }}
-              className="inline-flex items-center rounded-md bg-black px-3 py-2 text-white hover:bg-neutral-900"
-            >
-              Connect Wallet
-            </button>
-          );
-        }}
+        {({ openConnectModal, mounted }) => (
+          <button
+            disabled={!mounted}
+            onClick={() => {
+              prefetchNonce();
+              openConnectModal();
+            }}
+            className="inline-flex items-center rounded-md bg-black px-3 py-2 text-white hover:bg-neutral-900"
+          >
+            Connect Wallet
+          </button>
+        )}
       </ConnectButton.Custom>
     );
   }
-
-  return <ProfileMenu onLogout={handleLogout} variant={isMobile ? "mobile" : variant} />;
 }

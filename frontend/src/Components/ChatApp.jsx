@@ -34,11 +34,14 @@ const ChatApp = () => {
   useEffect(() => {
     refreshSessions();
 
-    // Same-tab custom event
     const onGlobalLogout = () => handleLogout();
-    window.addEventListener("hb-logout", onGlobalLogout);
+    const onGlobalLogin = () => refreshSessions();
 
-    // Cross-tab via BroadcastChannel
+    // ✅ Same-tab events
+    window.addEventListener("hb-logout", onGlobalLogout);
+    window.addEventListener("hb-login", onGlobalLogin);
+
+    // ✅ Cross-tab via BroadcastChannel
     let bc;
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       bc = new BroadcastChannel("hb-auth");
@@ -48,7 +51,7 @@ const ChatApp = () => {
       };
     }
 
-    // Cross-tab via localStorage 'storage' event (fallback)
+    // ✅ Cross-tab via localStorage
     const onStorage = (e) => {
       if (e.key === "hb-auth-evt" && e.newValue) {
         try {
@@ -62,6 +65,7 @@ const ChatApp = () => {
 
     return () => {
       window.removeEventListener("hb-logout", onGlobalLogout);
+      window.removeEventListener("hb-login", onGlobalLogin);
       window.removeEventListener("storage", onStorage);
       if (bc) bc.close();
     };

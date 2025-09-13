@@ -8,8 +8,8 @@ const Sidebar = ({
   onSelectSession,
   currentSessionId,
   hasMessages,
-  onLogout,   // ✅ new
-  onLogin,    // ✅ new
+  onLogout,   // ✅ used for WalletButton
+  onLogin,    // ✅ used for WalletButton
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const sidebarRef = useRef(null);
@@ -38,6 +38,51 @@ const Sidebar = ({
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [isOpen]);
+
+  // ✅ Sync login/logout across tabs instantly
+  useEffect(() => {
+    const handleLogout = () => {
+      setSessions([]);
+      onSelectSession(null);
+    };
+
+    const handleLogin = () => {
+      if (typeof onLogin === "function") onLogin();
+    };
+
+    // same-tab events
+    window.addEventListener("hb-logout", handleLogout);
+    window.addEventListener("hb-login", handleLogin);
+
+    // BroadcastChannel cross-tab
+    let bc;
+    if ("BroadcastChannel" in window) {
+      bc = new BroadcastChannel("hb-auth");
+      bc.onmessage = (evt) => {
+        if (evt?.data?.type === "logout") handleLogout();
+        if (evt?.data?.type === "login") handleLogin();
+      };
+    }
+
+    // localStorage cross-tab
+    const onStorage = (e) => {
+      if (e.key === "hb-auth-evt" && e.newValue) {
+        try {
+          const p = JSON.parse(e.newValue);
+          if (p?.type === "logout") handleLogout();
+          if (p?.type === "login") handleLogin();
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("hb-logout", handleLogout);
+      window.removeEventListener("hb-login", handleLogin);
+      window.removeEventListener("storage", onStorage);
+      if (bc) bc.close();
+    };
+  }, [setSessions, onSelectSession, onLogin]);
 
   const handleNewChat = async () => {
     if (!hasMessages) return;
