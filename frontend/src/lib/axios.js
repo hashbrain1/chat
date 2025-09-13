@@ -16,10 +16,10 @@ export const authApi = axios.create({
 });
 
 // Chat helpers
-export const getSessions = () => api.get("/sessions");
+export const getSessions = () => api.get("/api/sessions");
 export const getMessages = (sessionId) =>
-  api.get(`/${encodeURIComponent(sessionId)}`);
+  api.get(`/api/${encodeURIComponent(sessionId)}`);
 export const sendMessage = (sessionId, messages) =>
-  api.post("/chat", { sessionId, messages });
+  api.post("/api/chat", { sessionId, messages });
 
 export default api;
