@@ -84,14 +84,9 @@ const Footer = () => {
               </Link>
             </li>
             <li>
-              <a href="#" className="hover:text-green-400">
+              <Link to={"/roadmap"} target="_blank" className="hover:text-green-400">
                 Roadmap
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-green-400">
-                Careers
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="hover:text-green-400">
@@ -108,7 +103,8 @@ const Footer = () => {
             <li>
               <a href="#" className="hover:text-green-400">
                 Contact
-              </a>
+              </a> <br />
+              hashsuppot@gmail.com
             </li>
           </ul>
         </div>
