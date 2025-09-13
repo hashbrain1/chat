@@ -1,7 +1,6 @@
 import React from "react";
 import InfoCard from "../Components/InfoCard";
 import { CheckCircle } from "lucide-react";
-import { Button } from "@/Components/ui/button";
 import { Link } from "react-router-dom";
 
 const About = () => {

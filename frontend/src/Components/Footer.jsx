@@ -37,7 +37,12 @@ const Footer = () => {
             >
               <FaTwitter />
             </Link>
-            <Link to={""} className="hover:text-green-400" title="Discord">
+            <Link
+              to={"https://discord.gg/njrrq5Ap"}
+              target="_blank"
+              className="hover:text-green-400"
+              title="Discord"
+            >
               <FaDiscord />
             </Link>
             <Link
