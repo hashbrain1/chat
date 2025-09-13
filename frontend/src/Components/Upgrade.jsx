@@ -8,7 +8,7 @@ const tiers = [
   {
     id: "plus",
     name: "Plus",
-    price: 3,
+    price: 19,
     cadence: "month",
     cta: "Get Plus",
     highlight: true,
