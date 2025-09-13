@@ -79,9 +79,9 @@ const Footer = () => {
               </Link>
             </li>
             <li>
-              <a href="#" className="hover:text-green-400">
+              <Link to={"/tokenomics"} className="hover:text-green-400">
                 Tokenomics
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="hover:text-green-400">
