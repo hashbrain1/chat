@@ -25,7 +25,7 @@ const tiers = [
   {
     id: "pro",
     name: "Pro",
-    price: 33,
+    price: 99,
     cadence: "month",
     cta: "Get Pro",
     highlight: false,
