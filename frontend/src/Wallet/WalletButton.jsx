@@ -115,7 +115,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
       (prevStatus === "connecting" && status === "connected") ||
       (!prevIsConn && isConnected);
 
-    // if (status === "connecting") prefetchNonce();
+    // ❌ removed auto prefetch on refresh
     if (userInitiated) setShouldRunSiwe(true);
   }, [status, isConnected]);
 
@@ -199,7 +199,26 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
 
   if (!authed || !isConnected) {
     if (blocked && !signing) setBlocked(false);
-    return <ConnectButton chainStatus="icon" showBalance={false} />;
+
+    // ✅ Custom connect button: prefetch nonce only when user clicks
+    return (
+      <ConnectButton.Custom>
+        {({ openConnectModal, mounted }) => {
+          return (
+            <button
+              disabled={!mounted}
+              onClick={() => {
+                prefetchNonce();       // 🎯 only here → after click
+                openConnectModal();    // open RainbowKit modal
+              }}
+              className="inline-flex items-center rounded-md bg-black px-3 py-2 text-white hover:bg-neutral-900"
+            >
+              Connect Wallet
+            </button>
+          );
+        }}
+      </ConnectButton.Custom>
+    );
   }
 
   return <ProfileMenu onLogout={handleLogout} variant={isMobile ? "mobile" : variant} />;
