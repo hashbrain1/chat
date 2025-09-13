@@ -23,6 +23,7 @@ const Footer = () => {
               to={"https://www.youtube.com/@HashBrainai"}
               target="_blank"
               className="hover:text-green-400"
+              title="Youtube"
             >
               <FaYoutube />
             </Link>
@@ -32,22 +33,18 @@ const Footer = () => {
               }
               target="_blank"
               className="hover:text-green-400"
+              title="Twitter"
             >
               <FaTwitter />
             </Link>
-            <Link to={""} className="hover:text-green-400">
+            <Link to={""} className="hover:text-green-400" title="Discord">
               <FaDiscord />
-            </Link>
-            <Link to={""} className="hover:text-green-400">
-              <FaRedditAlien />
-            </Link>
-            <Link to={""} className="hover:text-green-400">
-              <FaGithub />
             </Link>
             <Link
               to={"https://t.me/+wGZ8G1_XCx00ZGU1"}
               target="_blank"
               className="hover:text-green-400"
+              title="Telegram"
             >
               <FaTelegramPlane />
             </Link>
@@ -57,6 +54,7 @@ const Footer = () => {
               }
               target="_blank"
               className="hover:text-green-400"
+              title="Instagram"
             >
               <FaInstagram />
             </Link>
