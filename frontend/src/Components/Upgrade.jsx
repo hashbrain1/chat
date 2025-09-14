@@ -30,6 +30,13 @@ const tiers = [
     cta: "Get Pro",
     highlight: false,
     features: [
+      "Access to Hash 3.0",
+      "Unlimited messaging",
+      "Longer memory",
+      "Unlimited deep search",
+      "Early access to new features",
+      "Image creation soon",
+      "Real-time data",
       "Everything in Plus",
       "Live support from our team",
       "Advanced financial search",
@@ -65,7 +72,10 @@ export default function Upgrade() {
         const preferred = prefers.find((c) => flat.includes(c));
         if (preferred) setSelectedCoin(preferred);
       } catch (e) {
-        console.warn("[Upgrade] coins fetch failed; continuing with defaults.", e?.message);
+        console.warn(
+          "[Upgrade] coins fetch failed; continuing with defaults.",
+          e?.message
+        );
       }
     })();
   }, []);
@@ -78,7 +88,11 @@ export default function Upgrade() {
     }
     try {
       setLoading(plan.id);
-      const payload = { amount: plan.price, payCurrency: selectedCoin, userAddress: finalAddr };
+      const payload = {
+        amount: plan.price,
+        payCurrency: selectedCoin,
+        userAddress: finalAddr,
+      };
       console.log("[Upgrade] subscribe payload →", payload);
 
       const data = await createPayment(payload);
@@ -132,7 +146,9 @@ export default function Upgrade() {
             ) : (
               options.map(({ group, value }) => (
                 <option key={group + value} value={value}>
-                  {group === "USDT" ? `USDT – ${value.replace("USDT", "")}` : value}
+                  {group === "USDT"
+                    ? `USDT – ${value.replace("USDT", "")}`
+                    : value}
                 </option>
               ))
             )}
@@ -150,9 +166,12 @@ export default function Upgrade() {
                 ${t.highlight ? "border-white/30" : "border-white/10"}`}
             >
               <div className="p-6 sm:p-8">
-                <div className="text-xl sm:text-2xl font-bold mb-1">{t.name}</div>
+                <div className="text-xl sm:text-2xl font-bold mb-1">
+                  {t.name}
+                </div>
                 <div className="text-3xl sm:text-4xl font-extrabold">
-                  ${t.price} <span className="text-base font-medium">/ {t.cadence}</span>
+                  ${t.price}{" "}
+                  <span className="text-base font-medium">/ {t.cadence}</span>
                 </div>
                 <button
                   onClick={() => subscribe(t)}
