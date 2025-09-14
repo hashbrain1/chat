@@ -17,8 +17,9 @@ const ChatApp = () => {
         ? data
         : [];
       setSessions(list);
-      if (list.length > 0) setCurrentSessionId(list[0].sessionId);
-      else setCurrentSessionId(null);
+      if (list.length > 0 && !currentSessionId) {
+        setCurrentSessionId(list[0].sessionId);
+      }
     } catch (err) {
       console.error("Error loading sessions:", err);
       setSessions([]);
@@ -63,13 +64,17 @@ const ChatApp = () => {
     };
     window.addEventListener("storage", onStorage);
 
+    // ✅ Auto-refresh sessions every 30s (keeps sidebar titles in sync)
+    const interval = setInterval(refreshSessions, 30000);
+
     return () => {
       window.removeEventListener("hb-logout", onGlobalLogout);
       window.removeEventListener("hb-login", onGlobalLogin);
       window.removeEventListener("storage", onStorage);
       if (bc) bc.close();
+      clearInterval(interval);
     };
-  }, []);
+  }, [currentSessionId]);
 
   return (
     <div className="flex h-screen bg-black text-white w-full overflow-hidden">
