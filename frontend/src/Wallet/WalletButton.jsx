@@ -29,7 +29,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // ✅ check cookie session
+  // ✅ check cookie session on load
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -50,6 +50,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     const onLocalLogout = () => {
       setAuthed(false);
       setPrefetchedNonce(null);
+      localStorage.removeItem("hb-auth-addr");
       try {
         disconnect();
       } catch {}
@@ -148,6 +149,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
           setBlocked(false);
           setPrefetchedNonce(null);
 
+          // ✅ Save address for refresh fallback
+          localStorage.setItem("hb-auth-addr", address);
+
           window.dispatchEvent(new CustomEvent("hb-login"));
           if ("BroadcastChannel" in window) {
             new BroadcastChannel("hb-auth").postMessage({ type: "login", t: Date.now() });
@@ -181,6 +185,9 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     setPrefetchedNonce(null);
     disconnect();
 
+    // ✅ Clear saved address
+    localStorage.removeItem("hb-auth-addr");
+
     window.dispatchEvent(new CustomEvent("hb-logout"));
     if ("BroadcastChannel" in window) {
       new BroadcastChannel("hb-auth").postMessage({ type: "logout", t: Date.now() });
@@ -190,7 +197,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     if (typeof onLogout === "function") onLogout();
   };
 
-  // ✅ FIX: trust cookie (`authed`) for UI
+  // ✅ Show ProfileMenu if cookie session exists
   if (authed) {
     return (
       <ProfileMenu
@@ -200,15 +207,6 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     );
   }
 
-  if (!authed || !isConnected) {
-    if (blocked && !signing) setBlocked(false);
-    return <ConnectButton chainStatus="icon" showBalance={false} />;
-  }
-
-  return (
-    <ProfileMenu
-      onLogout={handleLogout}
-      variant={isMobile ? "mobile" : variant}
-    />
-  );
+  // otherwise normal connect
+  return <ConnectButton chainStatus="icon" showBalance={false} />;
 }

@@ -40,7 +40,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
     window.dispatchEvent(new CustomEvent("hb-profile-toggle"));
   }, [open]);
 
-  // ✅ Allow showing Profile if cookie session exists, even if wagmi disconnected
+  // ✅ Allow showing Profile if cookie session exists
   let hasCookieSession = false;
   try {
     const stored = JSON.parse(localStorage.getItem("hb-auth-evt") || "{}");
@@ -76,6 +76,16 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
     }
   };
 
+  // ✅ Always show correct wallet initials
+  const getInitials = () => {
+    if (address) return address.slice(2, 4).toUpperCase();
+    try {
+      const storedAddr = localStorage.getItem("hb-auth-addr");
+      if (storedAddr) return storedAddr.slice(2, 4).toUpperCase();
+    } catch {}
+    return "W";
+  };
+
   return (
     <div className={isSidebar ? "w-full min-w-0" : "relative"}>
       <button
@@ -90,9 +100,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
         aria-haspopup="menu"
       >
         <span className="flex items-center gap-2 min-w-0">
-          <span className={avatar}>
-            {address?.slice(2, 4)?.toUpperCase() || "W"}
-          </span>
+          <span className={avatar}>{getInitials()}</span>
           <span className="text-sm truncate">Profile</span>
         </span>
         <svg
@@ -123,12 +131,16 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
               Wallet
             </div>
             <div className="flex items-center justify-between gap-2">
-              <code className="text-sm break-words">{truncate(address)}</code>
+              <code className="text-sm break-words">
+                {truncate(address || localStorage.getItem("hb-auth-addr") || "")}
+              </code>
               <div className="relative">
                 <button
                   onClick={async () => {
                     try {
-                      await navigator.clipboard.writeText(address || "");
+                      await navigator.clipboard.writeText(
+                        address || localStorage.getItem("hb-auth-addr") || ""
+                      );
                       setCopied(true);
                       setTimeout(() => setCopied(false), 1200);
                     } catch {}
