@@ -8,6 +8,7 @@ const ChatWindow = ({
   setCurrentSessionId,
   setSessions,
   onMessagesChange,
+  onSessionUpdate,   // ✅ added
 }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -101,6 +102,10 @@ const ChatWindow = ({
 
       setMessages(withResponse);
       onMessagesChange(withResponse);
+
+      if (typeof onSessionUpdate === "function") {
+        onSessionUpdate();   // ✅ refresh sessions instantly
+      }
     } catch (err) {
       console.error(err);
     } finally {

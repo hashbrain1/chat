@@ -8,6 +8,7 @@ const ChatApp = () => {
   const [hasMessages, setHasMessages] = useState(false);
   const [sessions, setSessions] = useState([]);
 
+  // 🔄 Load sessions from backend
   const refreshSessions = async () => {
     try {
       const { data } = await getSessions();
@@ -17,14 +18,16 @@ const ChatApp = () => {
         ? data
         : [];
       setSessions(list);
-      if (list.length > 0) setCurrentSessionId(list[0].sessionId);
-      else setCurrentSessionId(null);
+      if (list.length > 0 && !currentSessionId) {
+        setCurrentSessionId(list[0].sessionId);
+      }
     } catch (err) {
       console.error("Error loading sessions:", err);
       setSessions([]);
     }
   };
 
+  // 🔒 Reset state on logout
   const handleLogout = () => {
     setSessions([]);
     setCurrentSessionId(null);
@@ -92,6 +95,7 @@ const ChatApp = () => {
           setCurrentSessionId={setCurrentSessionId}
           setSessions={setSessions}
           onMessagesChange={(msgs) => setHasMessages(msgs.length > 0)}
+          onSessionUpdate={refreshSessions}   // ✅ added safely
         />
       </div>
     </div>
