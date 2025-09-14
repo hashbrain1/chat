@@ -28,8 +28,10 @@ const ChatWindow = ({
       onMessagesChange([]);
     };
 
+    // same-tab
     window.addEventListener("hb-logout", clearAll);
 
+    // cross-tab via BroadcastChannel
     let bc;
     if ("BroadcastChannel" in window) {
       bc = new BroadcastChannel("hb-auth");
@@ -38,6 +40,7 @@ const ChatWindow = ({
       };
     }
 
+    // cross-tab via localStorage
     const onStorage = (e) => {
       if (e.key === "hb-auth-evt" && e.newValue) {
         try {
@@ -86,7 +89,6 @@ const ChatWindow = ({
       ]);
 
       if (!sessionId && data.sessionId) {
-        // ✅ First time creating a session
         setCurrentSessionId(data.sessionId);
         setSessions((prev) => [
           { sessionId: data.sessionId, title: "New Chat" },
@@ -99,19 +101,6 @@ const ChatWindow = ({
 
       setMessages(withResponse);
       onMessagesChange(withResponse);
-
-      // ✅ Update session title immediately after first AI response
-      if (withResponse.length === 1 && data.response) {
-        const firstTitle =
-          input.length > 30 ? input.slice(0, 30) + "…" : input;
-        setSessions((prev) =>
-          prev.map((s) =>
-            s.sessionId === (data.sessionId || sessionId)
-              ? { ...s, title: firstTitle }
-              : s
-          )
-        );
-      }
     } catch (err) {
       console.error(err);
     } finally {
