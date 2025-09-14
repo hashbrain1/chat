@@ -83,11 +83,15 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
         aria-haspopup="menu"
       >
         <span className="flex items-center gap-2 min-w-0">
-          <span className={avatar}>{address?.slice(2, 4)?.toUpperCase() || "W"}</span>
+          <span className={avatar}>
+            {address?.slice(2, 4)?.toUpperCase() || "W"}
+          </span>
           <span className="text-sm truncate">Profile</span>
         </span>
         <svg
-          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
           viewBox="0 0 20 20"
           fill="currentColor"
         >
@@ -108,7 +112,9 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
                 : "px-3 pt-3 pb-3 border-b border-gray-200"
             }
           >
-            <div className="text-xs uppercase tracking-wide opacity-70 mb-1">Wallet</div>
+            <div className="text-xs uppercase tracking-wide opacity-70 mb-1">
+              Wallet
+            </div>
             <div className="flex items-center justify-between gap-2">
               <code className="text-sm break-words">{truncate(address)}</code>
               <div className="relative">
