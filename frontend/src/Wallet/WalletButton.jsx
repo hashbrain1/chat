@@ -29,7 +29,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // ✅ check cookie session
+  // ✅ check cookie session on load
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -190,7 +190,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     if (typeof onLogout === "function") onLogout();
   };
 
-  // ✅ FIX: trust cookie (`authed`) for UI
+  // ✅ FIX: show ProfileMenu if cookie session is valid, even if wagmi disconnected
   if (authed) {
     return (
       <ProfileMenu
@@ -200,15 +200,6 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     );
   }
 
-  if (!authed || !isConnected) {
-    if (blocked && !signing) setBlocked(false);
-    return <ConnectButton chainStatus="icon" showBalance={false} />;
-  }
-
-  return (
-    <ProfileMenu
-      onLogout={handleLogout}
-      variant={isMobile ? "mobile" : variant}
-    />
-  );
+  // otherwise, normal wallet connect flow
+  return <ConnectButton chainStatus="icon" showBalance={false} />;
 }
