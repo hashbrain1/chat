@@ -28,8 +28,10 @@ const ChatWindow = ({
       onMessagesChange([]);
     };
 
+    // same-tab
     window.addEventListener("hb-logout", clearAll);
 
+    // cross-tab via BroadcastChannel
     let bc;
     if ("BroadcastChannel" in window) {
       bc = new BroadcastChannel("hb-auth");
@@ -38,6 +40,7 @@ const ChatWindow = ({
       };
     }
 
+    // cross-tab via localStorage
     const onStorage = (e) => {
       if (e.key === "hb-auth-evt" && e.newValue) {
         try {
