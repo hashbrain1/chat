@@ -44,6 +44,16 @@ export default function Upgrade() {
   const [coins, setCoins] = useState({ usdt: [], top10: [] });
   const [selectedCoin, setSelectedCoin] = useState("USDTTRC20");
 
+  // ✅ Fallback for Trust Wallet refresh
+  const storedAddr = (() => {
+    try {
+      return localStorage.getItem("hb-auth-addr") || "";
+    } catch {
+      return "";
+    }
+  })();
+  const finalAddr = isConnected ? address : storedAddr;
+
   // Load available coins
   useEffect(() => {
     (async () => {
@@ -62,13 +72,13 @@ export default function Upgrade() {
 
   const subscribe = async (plan) => {
     setError("");
-    if (!isConnected || !address) {
+    if (!finalAddr) {
       setError("Please connect your wallet first.");
       return;
     }
     try {
       setLoading(plan.id);
-      const payload = { amount: plan.price, payCurrency: selectedCoin, userAddress: address };
+      const payload = { amount: plan.price, payCurrency: selectedCoin, userAddress: finalAddr };
       console.log("[Upgrade] subscribe payload →", payload);
 
       const data = await createPayment(payload);
@@ -101,7 +111,10 @@ export default function Upgrade() {
       <div className="max-w-6xl mx-auto px-4 py-10 sm:py-14">
         <div className="flex items-center justify-between mb-8 sm:mb-12">
           <h1 className="text-2xl sm:text-3xl font-bold">Upgrade your plan</h1>
-          <Link to="/chat" className="rounded-full px-4 py-2 bg-white/10 hover:bg-white/20 text-white">
+          <Link
+            to="/chat"
+            className="rounded-full px-4 py-2 bg-white/10 hover:bg-white/20 text-white"
+          >
             Back to Chat
           </Link>
         </div>
