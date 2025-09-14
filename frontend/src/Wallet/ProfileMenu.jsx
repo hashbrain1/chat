@@ -40,14 +40,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
     window.dispatchEvent(new CustomEvent("hb-profile-toggle"));
   }, [open]);
 
-  // ✅ Allow showing Profile if cookie session exists, even if wagmi disconnected
-  let hasCookieSession = false;
-  try {
-    const stored = JSON.parse(localStorage.getItem("hb-auth-evt") || "{}");
-    if (stored?.type === "login") hasCookieSession = true;
-  } catch {}
-
-  if (!isConnected && !hasCookieSession) return null;
+  if (!isConnected) return null;
 
   const isSidebar = variant === "sidebar";
   const isMobile = variant === "mobile";
@@ -90,15 +83,11 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
         aria-haspopup="menu"
       >
         <span className="flex items-center gap-2 min-w-0">
-          <span className={avatar}>
-            {address?.slice(2, 4)?.toUpperCase() || "W"}
-          </span>
+          <span className={avatar}>{address?.slice(2, 4)?.toUpperCase() || "W"}</span>
           <span className="text-sm truncate">Profile</span>
         </span>
         <svg
-          className={`h-4 w-4 shrink-0 transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
+          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
           viewBox="0 0 20 20"
           fill="currentColor"
         >
@@ -119,9 +108,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
                 : "px-3 pt-3 pb-3 border-b border-gray-200"
             }
           >
-            <div className="text-xs uppercase tracking-wide opacity-70 mb-1">
-              Wallet
-            </div>
+            <div className="text-xs uppercase tracking-wide opacity-70 mb-1">Wallet</div>
             <div className="flex items-center justify-between gap-2">
               <code className="text-sm break-words">{truncate(address)}</code>
               <div className="relative">
@@ -154,9 +141,7 @@ export default function ProfileMenu({ variant = "navbar", onLogout }) {
             <span className="text-sm opacity-80">Status</span>
             <span className="inline-flex items-center gap-1 text-sm font-medium">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              {status === "connected" || hasCookieSession
-                ? "Signed in"
-                : "Connecting…"}
+              {status === "connected" ? "Signed in" : "Connecting…"}
             </span>
           </div>
 

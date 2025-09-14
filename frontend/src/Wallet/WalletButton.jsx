@@ -170,6 +170,10 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     run();
   }, [shouldRunSiwe, isConnected, walletClient, address, chainId, authed, signing, prefetchedNonce, onLogin]);
 
+  useEffect(() => {
+    if (authed && !isConnected) setAuthed(false);
+  }, [authed, isConnected]);
+
   const handleLogout = async () => {
     try {
       await authApi.post("/auth/logout");
@@ -190,25 +194,10 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     if (typeof onLogout === "function") onLogout();
   };
 
-  // ✅ FIX: trust cookie (`authed`) for UI
-  if (authed) {
-    return (
-      <ProfileMenu
-        onLogout={handleLogout}
-        variant={isMobile ? "mobile" : variant}
-      />
-    );
-  }
-
   if (!authed || !isConnected) {
     if (blocked && !signing) setBlocked(false);
     return <ConnectButton chainStatus="icon" showBalance={false} />;
   }
 
-  return (
-    <ProfileMenu
-      onLogout={handleLogout}
-      variant={isMobile ? "mobile" : variant}
-    />
-  );
+  return <ProfileMenu onLogout={handleLogout} variant={isMobile ? "mobile" : variant} />;
 }

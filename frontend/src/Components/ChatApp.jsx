@@ -37,13 +37,13 @@ const ChatApp = () => {
     const onGlobalLogout = () => handleLogout();
     const onGlobalLogin = () => refreshSessions();
 
-    // same-tab
+    // ✅ Same-tab events
     window.addEventListener("hb-logout", onGlobalLogout);
     window.addEventListener("hb-login", onGlobalLogin);
 
-    // cross-tab BroadcastChannel
+    // ✅ Cross-tab via BroadcastChannel
     let bc;
-    if ("BroadcastChannel" in window) {
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       bc = new BroadcastChannel("hb-auth");
       bc.onmessage = (evt) => {
         if (evt?.data?.type === "logout") handleLogout();
@@ -51,7 +51,7 @@ const ChatApp = () => {
       };
     }
 
-    // cross-tab via localStorage
+    // ✅ Cross-tab via localStorage
     const onStorage = (e) => {
       if (e.key === "hb-auth-evt" && e.newValue) {
         try {

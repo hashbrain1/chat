@@ -52,11 +52,11 @@ const Sidebar = ({
       if (typeof onLogin === "function") onLogin();
     };
 
-    // same-tab
+    // same-tab events
     window.addEventListener("hb-logout", handleLogout);
     window.addEventListener("hb-login", handleLogin);
 
-    // cross-tab via BroadcastChannel
+    // BroadcastChannel cross-tab
     let bc;
     if ("BroadcastChannel" in window) {
       bc = new BroadcastChannel("hb-auth");
@@ -66,7 +66,7 @@ const Sidebar = ({
       };
     }
 
-    // cross-tab via localStorage
+    // localStorage cross-tab
     const onStorage = (e) => {
       if (e.key === "hb-auth-evt" && e.newValue) {
         try {

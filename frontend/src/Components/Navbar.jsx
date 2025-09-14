@@ -102,30 +102,6 @@ const Navbar = ({ onLogout, onLogin }) => {
     };
   }, [open]);
 
-  // ✅ Sync login/logout across tabs (force rerender)
-  useEffect(() => {
-    const rerender = () => setOpen((o) => o); // dummy state update
-    window.addEventListener("hb-login", rerender);
-    window.addEventListener("hb-logout", rerender);
-
-    let bc;
-    if ("BroadcastChannel" in window) {
-      bc = new BroadcastChannel("hb-auth");
-      bc.onmessage = rerender;
-    }
-    const onStorage = (e) => {
-      if (e.key === "hb-auth-evt" && e.newValue) rerender();
-    };
-    window.addEventListener("storage", onStorage);
-
-    return () => {
-      window.removeEventListener("hb-login", rerender);
-      window.removeEventListener("hb-logout", rerender);
-      window.removeEventListener("storage", onStorage);
-      if (bc) bc.close();
-    };
-  }, []);
-
   const navItems = [
     { label: "Home", to: "/", type: "link" },
     { label: "Product", to: "/product", type: "link" },
