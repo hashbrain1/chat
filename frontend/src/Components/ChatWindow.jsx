@@ -21,17 +21,15 @@ const ChatWindow = ({
     }
   }, [sessionId]);
 
-  // ✅ Clear messages immediately on logout (any tab)
+  // Clear messages immediately on logout (any tab)
   useEffect(() => {
     const clearAll = () => {
       setMessages([]);
       onMessagesChange([]);
     };
 
-    // same-tab
     window.addEventListener("hb-logout", clearAll);
 
-    // cross-tab via BroadcastChannel
     let bc;
     if ("BroadcastChannel" in window) {
       bc = new BroadcastChannel("hb-auth");
@@ -40,7 +38,6 @@ const ChatWindow = ({
       };
     }
 
-    // cross-tab via localStorage
     const onStorage = (e) => {
       if (e.key === "hb-auth-evt" && e.newValue) {
         try {
@@ -88,6 +85,7 @@ const ChatWindow = ({
         { role: "user", content: input },
       ]);
 
+      // If this was a brand-new chat, create it in the list
       if (!sessionId && data.sessionId) {
         setCurrentSessionId(data.sessionId);
         setSessions((prev) => [
@@ -96,11 +94,29 @@ const ChatWindow = ({
         ]);
       }
 
+      // Attach assistant response to the last user message
       const withResponse = [...updatedMessages];
       withResponse[withResponse.length - 1].response = data.response;
 
       setMessages(withResponse);
       onMessagesChange(withResponse);
+
+      // ✅ Immediately update the sidebar title after the FIRST AI response
+      if (withResponse.length === 1 && data.response) {
+        const serverTitle = data.title || data.sessionTitle;
+        const firstTitle =
+          (serverTitle && String(serverTitle)) ||
+          (input.length > 30 ? input.slice(0, 30) + "…" : input);
+
+        const newId = data.sessionId || sessionId; // prefer new sessionId if created
+        if (newId) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === newId ? { ...s, title: firstTitle } : s
+            )
+          );
+        }
+      }
     } catch (err) {
       console.error(err);
     } finally {
