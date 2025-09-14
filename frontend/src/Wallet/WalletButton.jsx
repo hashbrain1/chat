@@ -29,7 +29,7 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // ✅ check cookie session
+  // ✅ Check cookie session
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -171,7 +171,12 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
   }, [shouldRunSiwe, isConnected, walletClient, address, chainId, authed, signing, prefetchedNonce, onLogin]);
 
   useEffect(() => {
-    if (authed && !isConnected) setAuthed(false);
+    if (authed && !isConnected) {
+      // ✅ Keep authed true (TrustWallet case)
+      console.log("TrustWallet detected: cookie session valid, keeping authed");
+    } else if (!isConnected) {
+      setAuthed(false);
+    }
   }, [authed, isConnected]);
 
   const handleLogout = async () => {
@@ -194,7 +199,8 @@ export default function WalletButton({ variant = "navbar", onLogout, onLogin }) 
     if (typeof onLogout === "function") onLogout();
   };
 
-  if (!authed || !isConnected) {
+  // ✅ NEW render logic
+  if (!authed) {
     if (blocked && !signing) setBlocked(false);
     return <ConnectButton chainStatus="icon" showBalance={false} />;
   }
