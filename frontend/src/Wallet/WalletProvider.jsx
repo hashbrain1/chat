@@ -23,7 +23,7 @@ const config = getDefaultConfig({
   projectId: import.meta.env.VITE_WC_PROJECT_ID || "", // WalletConnect projectId
   chains: [mainnet, polygon, arbitrum, optimism, base, bsc, sepolia],
   ssr: false,
-  autoConnect: true, // ✅ DO NOT auto-reconnect on load
+  autoConnect: false, // ✅ DO NOT auto-reconnect on load
 });
 
 const queryClient = new QueryClient();
