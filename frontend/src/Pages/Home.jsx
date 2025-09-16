@@ -35,7 +35,7 @@ const Home = () => {
         >
           Real time intelligence
           <br className="hidden xs:block" />
-          <span className="block">AI for everyone</span>
+          <span className="block">AI for Finance</span>
         </h1>
 
         {/* Subtext (fluid type + max width) */}
