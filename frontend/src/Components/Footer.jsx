@@ -104,7 +104,7 @@ const Footer = () => {
               <a href="#" className="hover:text-green-400">
                 Contact
               </a> <br />
-              hashsuppot@gmail.com
+              Hashbrainai@gmail.com
             </li>
           </ul>
         </div>
