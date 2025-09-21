@@ -9,7 +9,7 @@ import sessionModel from "../Models/Session.js";
 export const sendMessage = async (req, res) => {
   try {
     let { messages, sessionId } = req.body;
-    const owner = req.user?.address || null;
+    const owner = req.user?.address || null;   // ✅ added back
 
     if (!messages?.length) return res.status(400).json({ error: "messages[] required" });
 
@@ -58,7 +58,7 @@ export const sendMessage = async (req, res) => {
     }
 
     // 🔹 Fallback → Tavily (only for news queries)
-    if (!rt && /(news|today|latest|headlines)/i.test(userMessage)) {
+    if (!rt && /(news|headlines)/i.test(userMessage)) {
       try { rt = await fetchRealTimeData(userMessage); } catch {}
     }
 
