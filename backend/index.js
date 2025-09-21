@@ -6,6 +6,7 @@ import chatRouter from "./Routes/Chat.Routes.js";
 import authRouter from "./Routes/Auth.Routes.js";
 import paymentRouter from "./Routes/Payment.Routes.js";
 import cookieParser from "cookie-parser";
+import financeRouter  from "./Routes/Finance.Routes.js";
 
 dotenv.config();
 
@@ -40,6 +41,8 @@ app.set("trust proxy", 1);
 app.use("/auth", authRouter);
 app.use("/api", chatRouter);
 app.use("/payments", paymentRouter);
+app.use("/finance", financeRouter);
+
 
 const startServer = async () => {
   try {

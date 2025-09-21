@@ -1,6 +1,8 @@
+// Controllers/Chat.Controller.js
 import { v4 as uuidv4 } from "uuid";
 import openai from "../Utils/openai.js";
 import { fetchRealTimeData } from "../Utils/tavily.js";
+import finnhub from "../Utils/finnhub.js";   // 🔹 Added
 import chatModel from "../Models/Chat.js";
 import sessionModel from "../Models/Session.js";
 
@@ -11,6 +13,7 @@ export const sendMessage = async (req, res) => {
 
     if (!messages?.length) return res.status(400).json({ error: "messages[] required" });
 
+    // Ensure session
     if (owner) {
       if (sessionId) {
         const s = await sessionModel.findOne({ sessionId, owner });
@@ -25,10 +28,41 @@ export const sendMessage = async (req, res) => {
 
     const userMessage = messages[messages.length - 1]?.content || "";
     let rt = "";
-    if (/(news|today|latest|weather|price|stock|score|market)/i.test(userMessage)) {
+
+    // 🔹 Finance queries → Finnhub
+    if (/(btc|bitcoin|eth|ethereum|forex|eur|usd|inr|price|stock|market)/i.test(userMessage)) {
+      try {
+        if (/btc|bitcoin/i.test(userMessage)) {
+          const { data } = await finnhub.get("/quote", { params: { symbol: "BINANCE:BTCUSDT" } });
+          rt = `Current BTC/USDT price: $${data.c}`;
+        } 
+        else if (/eth|ethereum/i.test(userMessage)) {
+          const { data } = await finnhub.get("/quote", { params: { symbol: "BINANCE:ETHUSDT" } });
+          rt = `Current ETH/USDT price: $${data.c}`;
+        } 
+        else if (/usd.*inr|inr.*usd/i.test(userMessage)) {
+          const { data } = await finnhub.get("/forex/rates", { params: { base: "USD" } });
+          rt = `USD/INR rate: ₹${data.quote.INR}`;
+        } 
+        else if (/aapl|apple/i.test(userMessage)) {
+          const { data } = await finnhub.get("/quote", { params: { symbol: "AAPL" } });
+          rt = `Apple (AAPL) price: $${data.c}`;
+        } 
+        else if (/tsla|tesla/i.test(userMessage)) {
+          const { data } = await finnhub.get("/quote", { params: { symbol: "TSLA" } });
+          rt = `Tesla (TSLA) price: $${data.c}`;
+        }
+      } catch (err) {
+        console.error("Finnhub fetch failed:", err.message);
+      }
+    }
+
+    // 🔹 Fallback → Tavily (news, market info)
+    if (!rt && /(news|today|latest|market)/i.test(userMessage)) {
       try { rt = await fetchRealTimeData(userMessage); } catch {}
     }
 
+    // Build messages for OpenAI
     const modelMessages = [
       { role: "system", content: "You are Hash Brain AI. Be concise and accurate." },
       ...(rt ? [{ role: "system", content: `Real-time notes:\n${rt}` }] : []),
@@ -39,6 +73,7 @@ export const sendMessage = async (req, res) => {
     const completion = await openai.chat.completions.create({ model, messages: modelMessages });
     const reply = completion.choices?.[0]?.message?.content?.trim() || "…";
 
+    // Save chat + update session title
     if (owner) {
       await chatModel.create({ sessionId, message: userMessage, response: reply, owner });
       await sessionModel.findOneAndUpdate(
