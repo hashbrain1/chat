@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
 import { getMessages, sendMessage } from "../lib/axios";
 import { Link } from "react-router-dom";
-import { Gem } from "lucide-react";
+import { Gem, Copy } from "lucide-react"; // ✅ added Copy icon
 
 const ChatWindow = ({
   sessionId,
   setCurrentSessionId,
   setSessions,
   onMessagesChange,
-  onSessionUpdate,   // ✅ added
+  onSessionUpdate,
 }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [copied, setCopied] = useState(null);
 
   useEffect(() => {
     if (sessionId) loadMessages();
@@ -29,10 +30,8 @@ const ChatWindow = ({
       onMessagesChange([]);
     };
 
-    // same-tab
     window.addEventListener("hb-logout", clearAll);
 
-    // cross-tab via BroadcastChannel
     let bc;
     if ("BroadcastChannel" in window) {
       bc = new BroadcastChannel("hb-auth");
@@ -41,7 +40,6 @@ const ChatWindow = ({
       };
     }
 
-    // cross-tab via localStorage
     const onStorage = (e) => {
       if (e.key === "hb-auth-evt" && e.newValue) {
         try {
@@ -104,7 +102,7 @@ const ChatWindow = ({
       onMessagesChange(withResponse);
 
       if (typeof onSessionUpdate === "function") {
-        onSessionUpdate();   // ✅ refresh sessions instantly
+        onSessionUpdate();
       }
     } catch (err) {
       console.error(err);
@@ -117,6 +115,16 @@ const ChatWindow = ({
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleCopy = async (text, id) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(id);
+      setTimeout(() => setCopied(null), 2000);
+    } catch (err) {
+      console.error("Copy failed", err);
     }
   };
 
@@ -150,24 +158,55 @@ const ChatWindow = ({
       <div className="flex-1 flex justify-center overflow-y-auto py-4 sm:py-6 pb-28 md:pb-6">
         <div className="w-full max-w-full sm:max-w-3xl px-2 sm:px-4 space-y-4">
           {messages.map((m, i) => (
-            <div key={i}>
+            <div key={i} className="space-y-2">
+              {/* User message */}
               <div className="flex justify-end">
-                <div
-                  className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl
-                              max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow
-                              break-words whitespace-pre-wrap overflow-x-auto"
-                >
-                  {m.message}
+                <div className="relative group max-w-[80%] sm:max-w-xs">
+                  <div
+                    className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl
+                                text-sm sm:text-base shadow break-words
+                                whitespace-pre-wrap overflow-x-auto"
+                  >
+                    {m.message}
+                  </div>
+                  <button
+                    onClick={() => handleCopy(m.message, `msg-${i}`)}
+                    className="absolute top-1 right-2 opacity-0 group-hover:opacity-100
+                               transition-opacity text-gray-200 hover:text-white"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                  {copied === `msg-${i}` && (
+                    <span className="absolute -bottom-5 right-2 text-xs text-green-400">
+                      Copied!
+                    </span>
+                  )}
                 </div>
               </div>
+
+              {/* AI response */}
               {m.response && (
-                <div className="flex justify-start mt-2">
-                  <div
-                    className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl
-                                max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow
-                                break-words whitespace-pre-wrap overflow-x-auto"
-                  >
-                    {m.response}
+                <div className="flex justify-start">
+                  <div className="relative group max-w-[80%] sm:max-w-xl">
+                    <div
+                      className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl
+                                  text-sm sm:text-base shadow break-words
+                                  whitespace-pre-wrap overflow-x-auto"
+                    >
+                      {m.response}
+                    </div>
+                    <button
+                      onClick={() => handleCopy(m.response, `resp-${i}`)}
+                      className="absolute top-1 right-2 opacity-0 group-hover:opacity-100
+                                 transition-opacity text-gray-400 hover:text-white"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                    {copied === `resp-${i}` && (
+                      <span className="absolute -bottom-5 right-2 text-xs text-green-400">
+                        Copied!
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
