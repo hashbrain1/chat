@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getMessages, sendMessage } from "../lib/axios";
 import { Link } from "react-router-dom";
-import { Gem, Copy } from "lucide-react"; // ✅ added Copy icon
+import { Gem, Copy } from "lucide-react"; // ✅ Copy icon
 
 const ChatWindow = ({
   sessionId,
@@ -164,8 +164,8 @@ const ChatWindow = ({
                 <div className="relative group max-w-[80%] sm:max-w-xs">
                   <div
                     className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl
-                                text-sm sm:text-base shadow break-words
-                                whitespace-pre-wrap overflow-x-auto"
+                                text-sm sm:text-base shadow
+                                whitespace-pre-wrap break-words break-all overflow-hidden"
                   >
                     {m.message}
                   </div>
@@ -190,8 +190,8 @@ const ChatWindow = ({
                   <div className="relative group max-w-[80%] sm:max-w-xl">
                     <div
                       className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl
-                                  text-sm sm:text-base shadow break-words
-                                  whitespace-pre-wrap overflow-x-auto"
+                                  text-sm sm:text-base shadow
+                                  whitespace-pre-wrap break-words break-all overflow-hidden"
                     >
                       {m.response}
                     </div>
@@ -240,7 +240,8 @@ const ChatWindow = ({
               onKeyDown={handleKeyDown}
               rows={1}
               className="flex-1 bg-transparent text-white outline-none resize-none py-2 sm:py-3
-                         text-sm sm:text-base min-h-[40px] sm:min-h-[48px]"
+                         text-sm sm:text-base min-h-[40px] sm:min-h-[48px]
+                         whitespace-pre-wrap break-words break-all overflow-hidden"
               placeholder="Type your message..."
             />
             <button
