@@ -2,7 +2,7 @@
 import { v4 as uuidv4 } from "uuid";
 import openai from "../Utils/openai.js";
 import { fetchRealTimeData } from "../Utils/tavily.js";
-import finnhub from "../Utils/finnhub.js";   
+import finnhub from "../Utils/finnhub.js";
 import chatModel from "../Models/Chat.js";
 import sessionModel from "../Models/Session.js";
 
@@ -11,7 +11,8 @@ export const sendMessage = async (req, res) => {
     let { messages, sessionId } = req.body;
     const owner = req.user?.address || null;
 
-    if (!messages?.length) return res.status(400).json({ error: "messages[] required" });
+    if (!messages?.length)
+      return res.status(400).json({ error: "messages[] required" });
 
     // Ensure session
     if (owner) {
@@ -31,28 +32,72 @@ export const sendMessage = async (req, res) => {
 
     // 🔹 Finance queries → Finnhub
     try {
-      const words = userMessage.toUpperCase().split(/\s+/);
+      // Common synonyms → ticker
+      const synonyms = {
+        bitcoin: "BTC",
+        btc: "BTC",
+        ethereum: "ETH",
+        eth: "ETH",
+        solana: "SOL",
+        sol: "SOL",
+        aptos: "APT",
+        apt: "APT",
+        dogecoin: "DOGE",
+        doge: "DOGE",
+        binance: "BNB",
+        bnb: "BNB",
+        ripple: "XRP",
+        xrp: "XRP",
+        cardano: "ADA",
+        ada: "ADA",
+        polygon: "MATIC",
+        matic: "MATIC",
+      };
 
-      // Try crypto tickers → default to BINANCE:SYMBOLUSDT
+      const words = userMessage.toLowerCase().split(/\s+/);
+
+      // First try synonyms
       for (let w of words) {
-        if (["PRICE", "RATE", "VALUE", "OF", "IN", "MARKET"].includes(w)) continue;
-        if (/^[A-Z]{2,10}$/.test(w)) {
-          try {
-            const { data } = await finnhub.get("/quote", { params: { symbol: `BINANCE:${w}USDT` } });
-            if (data && data.c) {
-              rt = `${w}/USDT price: $${data.c}`;
-              break;
-            }
-          } catch (err) {
-            // Not a crypto ticker, continue
+        if (synonyms[w]) {
+          const symbol = `BINANCE:${synonyms[w]}USDT`;
+          const { data } = await finnhub.get("/quote", { params: { symbol } });
+          if (data?.c) {
+            rt = `${synonyms[w]}/USDT price: $${data.c}`;
+            break;
+          }
+        }
+      }
+
+      // If not found, try raw uppercase tickers
+      if (!rt) {
+        const upperWords = userMessage.toUpperCase().split(/\s+/);
+        for (let w of upperWords) {
+          if (
+            ["PRICE", "RATE", "VALUE", "OF", "IN", "MARKET", "LATEST"].includes(
+              w
+            )
+          )
+            continue;
+          if (/^[A-Z]{2,10}$/.test(w)) {
+            try {
+              const { data } = await finnhub.get("/quote", {
+                params: { symbol: `BINANCE:${w}USDT` },
+              });
+              if (data?.c) {
+                rt = `${w}/USDT price: $${data.c}`;
+                break;
+              }
+            } catch {}
           }
         }
       }
 
       // Special forex handling → USD/INR
       if (!rt && /USD.*INR|INR.*USD/i.test(userMessage)) {
-        const { data } = await finnhub.get("/forex/rates", { params: { base: "USD" } });
-        if (data && data.quote && data.quote.INR) {
+        const { data } = await finnhub.get("/forex/rates", {
+          params: { base: "USD" },
+        });
+        if (data?.quote?.INR) {
           rt = `USD/INR rate: ₹${data.quote.INR}`;
         }
       }
@@ -62,26 +107,47 @@ export const sendMessage = async (req, res) => {
 
     // 🔹 Fallback → Tavily (only for news queries)
     if (!rt && /(news|headlines)/i.test(userMessage)) {
-      try { rt = await fetchRealTimeData(userMessage); } catch {}
+      try {
+        rt = await fetchRealTimeData(userMessage);
+      } catch {}
     }
 
     // Build messages for OpenAI
     const modelMessages = [
-      { role: "system", content: "You are Hash Brain AI. Be concise and accurate. Always use provided real-time notes if available." },
+      {
+        role: "system",
+        content:
+          "You are Hash Brain AI. Be concise and accurate. Always use provided real-time notes if available.",
+      },
       ...(rt ? [{ role: "system", content: `Real-time notes:\n${rt}` }] : []),
       ...messages,
     ];
 
     const model = process.env.OPENAI_MODEL || "gpt-5-nano";
-    const completion = await openai.chat.completions.create({ model, messages: modelMessages });
-    const reply = completion.choices?.[0]?.message?.content?.trim() || "…";
+    const completion = await openai.chat.completions.create({
+      model,
+      messages: modelMessages,
+    });
+    const reply =
+      completion.choices?.[0]?.message?.content?.trim() || "…";
 
     // Save chat + update session title
     if (owner) {
-      await chatModel.create({ sessionId, message: userMessage, response: reply, owner });
+      await chatModel.create({
+        sessionId,
+        message: userMessage,
+        response: reply,
+        owner,
+      });
       await sessionModel.findOneAndUpdate(
         { sessionId, owner },
-        { $set: { title: userMessage.slice(0, 40) + (userMessage.length > 40 ? "…" : "") } },
+        {
+          $set: {
+            title:
+              userMessage.slice(0, 40) +
+              (userMessage.length > 40 ? "…" : ""),
+          },
+        },
         { new: true }
       );
     }
@@ -102,7 +168,9 @@ export const getMessages = async (req, res) => {
     const s = await sessionModel.findOne({ sessionId, owner });
     if (!s) return res.status(404).json({ error: "Not found" });
 
-    const chats = await chatModel.find({ sessionId, owner }).sort({ createdAt: 1 });
+    const chats = await chatModel
+      .find({ sessionId, owner })
+      .sort({ createdAt: 1 });
     res.json(chats);
   } catch (e) {
     console.error("❌ Error in getMessages:", e);
@@ -114,7 +182,9 @@ export const getSessions = async (req, res) => {
   try {
     const owner = req.user?.address || null;
     if (!owner) return res.json([]);
-    const sessions = await sessionModel.find({ owner }).sort({ updatedAt: -1 });
+    const sessions = await sessionModel
+      .find({ owner })
+      .sort({ updatedAt: -1 });
     res.json(sessions);
   } catch (e) {
     console.error("❌ Error in getSessions:", e);
@@ -127,10 +197,16 @@ export const createSession = async (req, res) => {
     const owner = req.user?.address || null;
     if (!owner) return res.json({ sessionId: null, title: "New Chat" });
     const sessionId = uuidv4();
-    const session = await sessionModel.create({ sessionId, title: "New Chat", owner });
+    const session = await sessionModel.create({
+      sessionId,
+      title: "New Chat",
+      owner,
+    });
     res.json(session);
   } catch (e) {
     console.error("❌ Error in createSession:", e);
-    res.status(500).json({ message: "Failed to create session", error: e });
+    res
+      .status(500)
+      .json({ message: "Failed to create session", error: e });
   }
 };
