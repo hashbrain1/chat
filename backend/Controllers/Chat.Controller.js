@@ -30,7 +30,7 @@ export const sendMessage = async (req, res) => {
     let rt = "";
 
     // 🔹 Finance queries → Finnhub
-    if (/(btc|bitcoin|eth|ethereum|forex|eur|usd|inr|price|stock|market)/i.test(userMessage)) {
+    if (/(btc|bitcoin|eth|ethereum|forex|eur|usd|inr|aapl|apple|tsla|tesla)/i.test(userMessage)) {
       try {
         if (/btc|bitcoin/i.test(userMessage)) {
           const { data } = await finnhub.get("/quote", { params: { symbol: "BINANCE:BTCUSDT" } });
@@ -57,8 +57,8 @@ export const sendMessage = async (req, res) => {
       }
     }
 
-    // 🔹 Fallback → Tavily (news, market info)
-    if (!rt && /(news|today|latest|market)/i.test(userMessage)) {
+    // 🔹 Fallback → Tavily (only for news queries)
+    if (!rt && /(news|today|latest|headlines)/i.test(userMessage)) {
       try { rt = await fetchRealTimeData(userMessage); } catch {}
     }
 
