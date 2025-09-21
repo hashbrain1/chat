@@ -154,7 +154,8 @@ const ChatWindow = ({
               <div className="flex justify-end">
                 <div
                   className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl
-                              max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow"
+                              max-w-[80%] sm:max-w-xs text-sm sm:text-base shadow
+                              break-words whitespace-pre-wrap overflow-x-auto"
                 >
                   {m.message}
                 </div>
@@ -163,7 +164,8 @@ const ChatWindow = ({
                 <div className="flex justify-start mt-2">
                   <div
                     className="bg-gray-800 text-gray-100 px-3 sm:px-4 py-2 rounded-2xl
-                                max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow"
+                                max-w-[80%] sm:max-w-xl text-sm sm:text-base shadow
+                                break-words whitespace-pre-wrap overflow-x-auto"
                   >
                     {m.response}
                   </div>
