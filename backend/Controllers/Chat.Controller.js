@@ -2,14 +2,14 @@
 import { v4 as uuidv4 } from "uuid";
 import openai from "../Utils/openai.js";
 import { fetchRealTimeData } from "../Utils/tavily.js";
-import finnhub from "../Utils/finnhub.js";   // 🔹 Added
+import finnhub from "../Utils/finnhub.js";   
 import chatModel from "../Models/Chat.js";
 import sessionModel from "../Models/Session.js";
 
 export const sendMessage = async (req, res) => {
   try {
     let { messages, sessionId } = req.body;
-    const owner = req.user?.address || null;   // ✅ added back
+    const owner = req.user?.address || null;
 
     if (!messages?.length) return res.status(400).json({ error: "messages[] required" });
 
@@ -30,31 +30,34 @@ export const sendMessage = async (req, res) => {
     let rt = "";
 
     // 🔹 Finance queries → Finnhub
-    if (/(btc|bitcoin|eth|ethereum|forex|eur|usd|inr|aapl|apple|tsla|tesla)/i.test(userMessage)) {
-      try {
-        if (/btc|bitcoin/i.test(userMessage)) {
-          const { data } = await finnhub.get("/quote", { params: { symbol: "BINANCE:BTCUSDT" } });
-          rt = `Current BTC/USDT price: $${data.c}`;
-        } 
-        else if (/eth|ethereum/i.test(userMessage)) {
-          const { data } = await finnhub.get("/quote", { params: { symbol: "BINANCE:ETHUSDT" } });
-          rt = `Current ETH/USDT price: $${data.c}`;
-        } 
-        else if (/usd.*inr|inr.*usd/i.test(userMessage)) {
-          const { data } = await finnhub.get("/forex/rates", { params: { base: "USD" } });
-          rt = `USD/INR rate: ₹${data.quote.INR}`;
-        } 
-        else if (/aapl|apple/i.test(userMessage)) {
-          const { data } = await finnhub.get("/quote", { params: { symbol: "AAPL" } });
-          rt = `Apple (AAPL) price: $${data.c}`;
-        } 
-        else if (/tsla|tesla/i.test(userMessage)) {
-          const { data } = await finnhub.get("/quote", { params: { symbol: "TSLA" } });
-          rt = `Tesla (TSLA) price: $${data.c}`;
+    try {
+      const words = userMessage.toUpperCase().split(/\s+/);
+
+      // Try crypto tickers → default to BINANCE:SYMBOLUSDT
+      for (let w of words) {
+        if (["PRICE", "RATE", "VALUE", "OF", "IN", "MARKET"].includes(w)) continue;
+        if (/^[A-Z]{2,10}$/.test(w)) {
+          try {
+            const { data } = await finnhub.get("/quote", { params: { symbol: `BINANCE:${w}USDT` } });
+            if (data && data.c) {
+              rt = `${w}/USDT price: $${data.c}`;
+              break;
+            }
+          } catch (err) {
+            // Not a crypto ticker, continue
+          }
         }
-      } catch (err) {
-        console.error("Finnhub fetch failed:", err.message);
       }
+
+      // Special forex handling → USD/INR
+      if (!rt && /USD.*INR|INR.*USD/i.test(userMessage)) {
+        const { data } = await finnhub.get("/forex/rates", { params: { base: "USD" } });
+        if (data && data.quote && data.quote.INR) {
+          rt = `USD/INR rate: ₹${data.quote.INR}`;
+        }
+      }
+    } catch (err) {
+      console.error("Finnhub fetch failed:", err.message);
     }
 
     // 🔹 Fallback → Tavily (only for news queries)
@@ -64,7 +67,7 @@ export const sendMessage = async (req, res) => {
 
     // Build messages for OpenAI
     const modelMessages = [
-      { role: "system", content: "You are Hash Brain AI. Be concise and accurate." },
+      { role: "system", content: "You are Hash Brain AI. Be concise and accurate. Always use provided real-time notes if available." },
       ...(rt ? [{ role: "system", content: `Real-time notes:\n${rt}` }] : []),
       ...messages,
     ];
